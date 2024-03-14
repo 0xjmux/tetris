@@ -1,0 +1,37 @@
+
+# CMake files
+build
+build_*
+CMakeFiles/
+CMakeCache.txt
+Makefile 
+cmake_install.cmake
+
+# ESP-IDF
+sdkconfig
+sdkconfig.old
+
+*.log
+
+
+*.swp
+a.out
+CMakeCache
+a.out
+*.o
+*.a
+
+
+# cpp check
+*cppcheck-build-dir
+*.cppcheck
+
+# Visual Studio Code
+.vscode
+.vs
+.devcontainer
+.ipynb*
+
+# Output csv files for unit testing
+output*.csv
+
