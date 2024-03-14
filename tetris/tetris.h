@@ -56,8 +56,8 @@ static const uint16_t points_per_level_cleared[] = {0, 100, 300, 500, 800};
  * Negative numbers allowed.
 */
 typedef struct tetris_location {
-    int row;
-    int col;
+    int8_t row;
+    int8_t col;
 } tetris_location;
 
 // tetris piece descriptions - defined here to prevent multiple definition
@@ -125,6 +125,7 @@ void tg_tick(TetrisGame *tg, enum player_move move);
 TetrisBoard render_active_board(TetrisGame *tg);
 TetrisPiece create_rand_piece(TetrisGame *tg);
 
+bool test_piece_offset(TetrisBoard *tb, const tetris_location global_loc, const tetris_location move_offset);
 
 
 // function definitions

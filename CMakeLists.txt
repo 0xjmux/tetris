@@ -1,4 +1,4 @@
-#idf_component_register(SRCS "driver_tetris.c" INCLUDE_DIRS "include")
+#idf_component_register(SRCS "tetris/tetris.c" INCLUDE_DIRS "tetris/tetris.h")
 
 
 # Rewritten CMakeLists.txt for tetris game
@@ -7,6 +7,16 @@ cmake_minimum_required(VERSION 3.16)
 project(tetris_driver VERSION 0.1 LANGUAGES C)
  
 set(CMAKE_C_STANDARD 11)
+
+### Require out-of-source builds
+file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOC_PATH)
+if(EXISTS "${LOC_PATH}")
+    message(FATAL_ERROR "You cannot build in a source directory (or any directory with "
+                        "CMakeLists.txt file). Please make a build subdirectory. Feel free to "
+                        "remove CMakeCache.txt and CMakeFiles.")
+endif()
+
+
 
 # for future; option to build for terminal use so nothing is included needlessly
 #option(BUILD_FOR_TERM "Compile game with driver for testing on normal desktop platforms" NO)

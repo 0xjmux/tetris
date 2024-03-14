@@ -273,9 +273,15 @@ bool check_valid_move(TetrisGame *tg, uint8_t player_move){
 
         case T_RIGHT:
             const tetris_location right_offset = {.row = 0, .col = 1};
+            for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
+                move_valid = move_valid && test_piece_offset(tg->board, tp_cells[i], right_offset);
+            }
 
         case T_DOWN:
             const tetris_location down_offset = {.row = 1, .col = 0};
+            for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
+                move_valid = move_valid && test_piece_offset(tg->board, tp_cells[i], down_offset);
+            }
 
         default:
             #ifdef DEBUG_T
