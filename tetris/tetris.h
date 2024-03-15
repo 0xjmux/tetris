@@ -126,6 +126,7 @@ TetrisPiece create_rand_piece(TetrisGame *tg);
 TetrisPiece create_tetris_piece(enum piece_type ptype, int8_t row, int8_t col, uint8_t orientation);
 
 bool test_piece_offset(TetrisBoard *tb, const tetris_location global_loc, const tetris_location move_offset);
+bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp);
 
 
 // function definitions

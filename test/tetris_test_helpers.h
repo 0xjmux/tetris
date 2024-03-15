@@ -10,5 +10,11 @@ void setup_N_lines_board(TetrisBoard *tb, uint8_t N);
 // void setup_moveCheck(TetrisGame *tg, uint8_t gen_height, TetrisPiece testpiece);
 void setup_moveCheck(TetrisGame *tg, uint8_t gen_height, \
     TetrisPiece testpiece, int *test_state);
+void fill_board_rectangle(TetrisBoard *tb, int8_t tL_row, int8_t tL_col, \
+    int8_t bR_row, int8_t bR_col, int8_t fill_value);
 
+
+
+void print_all_tetrominos(void);
+void print_piece(const tetris_location t[4][4]);
 #endif

@@ -15,11 +15,7 @@
 
 
 int main(void) {
-    // print piece definitions out to console for confirmation
-    // for (int i = 0; i < NUM_TETROMINOS; i++) {
-    //     printf("Piece: %d\n", i);
-    //     print_piece(TETROMINOS[i]);
-    // }
+
 
     // set up ncurses
     WINDOW *g_win, *s_win;      // game and score windows

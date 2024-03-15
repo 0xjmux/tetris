@@ -13,44 +13,6 @@ FILE *gamelog;
 #endif
 
 
-
-void print_piece(const tetris_location t[4][4]) {
-    char piece[4][4];
-    tetris_location loc;      // temp location
-
-    // iterate through all 4 orientations
-    for (int o = 0; o < 4; o++) {
-        printf("Orientation %d: \n", o);
-        // update temporary piece grid with this piece's placements
-        for (int row = 0; row < 4; row++) {
-            loc = t[o][row];
-            piece[loc.row][loc.col] = 'X';
-        }
-
-        // print board
-        for (int row = 0; row < 4; row++) {
-            for (int col = 0; col < 4; col++) {
-                if (piece[row][col])
-                    printf("%c", piece[row][col]);
-                else
-                    printf(" ");
-            }
-            printf("\n");
-        }
-
-        printf("\n");
-        // clean out location array
-        for (int row = 0; row < 4; row++) {
-            for (int col = 0; col < 4; col++) {
-                piece[row][col] = '\0';
-            }
-        }
-    }
-}
-
-
-
-
 /**
  * Function to create a board WITHOUT using 
  * malloc and ptrs
@@ -76,8 +38,6 @@ TetrisBoard init_board(void) {
 TetrisGame* create_game(void) {
     TetrisGame *tg = malloc(sizeof(TetrisGame));
 
-    // tg->board = create_board();
-    // tg->active_board = create_board();
     tg->board = init_board();
     tg->active_board = init_board();
     tg->game_over = false;
@@ -90,7 +50,6 @@ TetrisGame* create_game(void) {
     // separate gamelog file to prevent ncurses printing issues
     gamelog = fopen("game.log", "w+");
     #endif
-
 
     return tg;
 }
@@ -112,7 +71,6 @@ void end_game(TetrisGame *tg) {
  * Process a single game tick
  * @param TetrisGame *tg
  * @param player_move move
- * @returns true if successful, false if gameover ??? idk if this is how i wanna do it
 */
 void tg_tick(TetrisGame *tg, enum player_move move) {
 
@@ -125,6 +83,45 @@ void tg_tick(TetrisGame *tg, enum player_move move) {
     fflush(gamelog);
     #endif
 
+
+    switch (move) {
+        case T_NONE:
+            break;
+
+        case T_UP:
+            if(test_piece_rotate(&tg->board, tg->active_piece))
+                fprintf(gamelog, "piece rotated (not impl yet)\n");
+                // HANDLE ACTUALLY ROTATING PIECE HERE!!!!
+
+        case T_DOWN:
+            if(check_valid_move(tg, move))
+                tg->active_piece.loc.row += 1;
+            break;
+        case T_LEFT:
+            if(check_valid_move(tg, move))
+                tg->active_piece.loc.col -= 1;
+            break;
+
+        case T_RIGHT:
+            if(check_valid_move(tg, move))
+                tg->active_piece.loc.col += 1;
+            break;
+        
+        case T_PLAYPAUSE:
+            // IMPLEMENT
+            break;
+        
+        // T_QUIT implemented by driver
+
+        default:
+            #ifdef DEBUG_T
+            fprintf(gamelog, "tg_tick default case! uhoh  ");
+            fprintf(gamelog, "player_move=%d \n", move);
+            #endif
+            break;
+    }
+
+    // if gravity interval has passed, then move piece down
 
     // if piece has fallen, then create_rand_piece()
 
@@ -142,11 +139,7 @@ TetrisBoard render_active_board(TetrisGame *tg) {
     TetrisPiece tp = tg->active_piece;
 
     // relative locations of active piece based on orientation
-    // tetris_location test_cell = TETROMINOS[tp.ptype][tp.orientation][0];
     tetris_location tp_cells[NUM_CELLS_IN_TETROMINO];
-    // = TETROMINOS[tp.ptype][tp.orientation];
-    // memcpy(tp_cells, TETROMINOS[tp.ptype][tp.orientation], NUM_CELLS_IN_TETROMINO * sizeof(tetris_location));
-    // was trying to use memcpy here but idk if it was causing issues
     for (int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
         tp_cells[i] = TETROMINOS[tp.ptype][tp.orientation][i];
     }
@@ -249,7 +242,6 @@ bool check_valid_move(TetrisGame *tg, uint8_t player_move){
     TetrisPiece tp = tg->active_piece;
     tetris_location tp_cells[NUM_CELLS_IN_TETROMINO];
     // copy offsets for current piece into tp_cells
-    // @todo is this copying too much??? CHECK!!!!! 
     memcpy(tp_cells, TETROMINOS[tp.ptype][tp.orientation], sizeof(tp_cells));
     // change those offsets to global piece locations
     for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
@@ -306,8 +298,8 @@ bool check_valid_move(TetrisGame *tg, uint8_t player_move){
 }
 
 /**
- * Helper func to test if `offset` from 
- * `global_loc` is empty 
+ * Helper func to test if single cell `offset` from 
+ * `global_loc` is able to be moved to
 */
 bool test_piece_offset(TetrisBoard *tb, const tetris_location global_loc, const tetris_location move_offset) {
     tetris_location testing_loc;    // location we want to move to
@@ -323,32 +315,58 @@ bool test_piece_offset(TetrisBoard *tb, const tetris_location global_loc, const 
         return false;
 }
 
-
-void move_piece_left(TetrisGame *tg) {
-
-}
-
-void move_piece_right(TetrisGame *tg) {
-
-}
-
-
-/** 
- * On an active_piece reaching solid ground or a
- * row clear, move floating blocks down
+/**
+ * Test if next rotation of piece tp is valid
 */
-void do_gravity(TetrisGame *tg) {
+bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp) {
+    tetris_location tp_cells[NUM_CELLS_IN_TETROMINO];
+    // copy offsets for next orientation of piece into tp_cells
+    memcpy(tp_cells, TETROMINOS[tp.ptype][(tp.orientation + 1) % 4], sizeof(tp_cells));
+    // change those offsets to global piece locations
+    for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
+        tp_cells[i].row += tp.loc.row;
+        tp_cells[i].col += tp.loc.col;
+    }
 
+    #ifdef DEBUG_T
+    fprintf(gamelog, "Current orientation=%d, orientation after rotation = %d\n", \
+        tp.orientation, ((tp.orientation+1) % 4));
+    fflush(gamelog);
+    #endif
+
+    bool result = true;
+    tetris_location testing_loc = tp_cells[0];
+
+    for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
+        testing_loc = tp_cells[i];
+        // if cell is unoccupied and not out of range
+        if (tb->board[testing_loc.row][testing_loc.col] == -1 && \
+            testing_loc.row > -1 && testing_loc.row < TETRIS_ROWS && \
+            testing_loc.col > -1 && testing_loc.col < TETRIS_COLS)
+            result = result && true;
+        else
+            result = false;
+    }
+
+    return result;
 }
+
+
 
 
 /**
  * On placing a piece down, the rows where it landed 
- * need to be checked to see if they're full. If so, 
- * they're cleared
+ * need to be checked to see if they're full so they can
+ * be cleared and the score can be increased
 */
 bool check_filled_row(TetrisGame *tg, uint8_t row) {
+    
+    for (int c = 0; c < TETRIS_COLS; c++) {
+        if(tg->board.board[row][c] == -1)
+            return false;
+    }
 
+    return true;
 }
 
 
