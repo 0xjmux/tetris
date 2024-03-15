@@ -50,7 +50,7 @@ int main(void) {
     wrefresh(s_win);
 
     TetrisGame *tg = create_game();
-    tg->board = create_board();
+    // tg->board = create_board();
     enum player_move move = T_NONE;
 
     // while game is running and player hasn't tried to quit
@@ -60,7 +60,7 @@ int main(void) {
         tg_tick(tg, move);
 
         // display board
-        display_board(g_win, tg->board);
+        display_board(g_win, &tg->board);
         update_score(s_win, tg);
 
         sleep_millis(10);       // delay for 10ms (will be replaced with ISR)

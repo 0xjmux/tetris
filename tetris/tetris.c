@@ -13,6 +13,7 @@ FILE *gamelog;
 #endif
 
 
+
 void print_piece(const tetris_location t[4][4]) {
     char piece[4][4];
     tetris_location loc;      // temp location
@@ -48,26 +49,25 @@ void print_piece(const tetris_location t[4][4]) {
 }
 
 
+
+
 /**
- * Allocate and init TetrisBoard->board array with all zeros
+ * Function to create a board WITHOUT using 
+ * malloc and ptrs
 */
-TetrisBoard* create_board(void) {
+TetrisBoard init_board(void) {
     //assert_msg(TETRIS_ROWS < 256 && TETRIS_COLS < 256, "Board size too big!\n");
-    TetrisBoard *b = malloc(sizeof(TetrisBoard));
-    assert(b);
+    TetrisBoard b; 
     for (int i = 0; i < TETRIS_ROWS; i++) {
         for (int j = 0; j < TETRIS_COLS; j++) {
-            b->board[i][j] = -1;
+            b.board[i][j] = -1;
         }
     }
 
-    b->highest_occupied_cell = TETRIS_ROWS - 1;
+    b.highest_occupied_cell = TETRIS_ROWS - 1;
     return b;
 }
 
-void delete_board(TetrisBoard *b) {
-    free(b);
-}
 
 /**
  * Create a new tetris game struct
@@ -76,8 +76,10 @@ void delete_board(TetrisBoard *b) {
 TetrisGame* create_game(void) {
     TetrisGame *tg = malloc(sizeof(TetrisGame));
 
-    tg->board = create_board();
-    tg->active_board = create_board();
+    // tg->board = create_board();
+    // tg->active_board = create_board();
+    tg->board = init_board();
+    tg->active_board = init_board();
     tg->game_over = false;
     tg->level = 1;
     tg->score = 0;
@@ -91,7 +93,6 @@ TetrisGame* create_game(void) {
 
 
     return tg;
-
 }
 
 /**
@@ -100,19 +101,11 @@ TetrisGame* create_game(void) {
 void end_game(TetrisGame *tg) {
     #ifdef DEBUG_T
     fprintf(gamelog, "Deallocating tetris game\n");
+    fclose(gamelog);
     #endif
-
-    // if board is still allocated, dealloc it
-    // (this ref-deref might cause issues)
-    if(tg->board != NULL)
-        free(tg->board);
 
 
     free(tg);
-
-    #ifdef DEBUG_T
-    fclose(gamelog);
-    #endif
 }
 
 /**
@@ -145,14 +138,18 @@ void tg_tick(TetrisGame *tg, enum player_move move) {
 */
 // TetrisBoard render_active_board(TetrisGame *tg, TetrisPiece *tp) {
 TetrisBoard render_active_board(TetrisGame *tg) {
-    TetrisBoard gameboard = *tg->board;
+    TetrisBoard gameboard = tg->board;
     TetrisPiece tp = tg->active_piece;
 
     // relative locations of active piece based on orientation
     // tetris_location test_cell = TETROMINOS[tp.ptype][tp.orientation][0];
     tetris_location tp_cells[NUM_CELLS_IN_TETROMINO];
     // = TETROMINOS[tp.ptype][tp.orientation];
-    memcpy(tp_cells, TETROMINOS[tp.ptype][tp.orientation], NUM_CELLS_IN_TETROMINO * sizeof(tetris_location));
+    // memcpy(tp_cells, TETROMINOS[tp.ptype][tp.orientation], NUM_CELLS_IN_TETROMINO * sizeof(tetris_location));
+    // was trying to use memcpy here but idk if it was causing issues
+    for (int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
+        tp_cells[i] = TETROMINOS[tp.ptype][tp.orientation][i];
+    }
 
 
     #ifdef DEBUG_T  // print out contents of tp_cells
@@ -171,10 +168,9 @@ TetrisBoard render_active_board(TetrisGame *tg) {
         gameboard.board[tp.loc.row + curr_offset.row] \
             [tp.loc.col + curr_offset.col] = tp.ptype;
 
-
     }
 
-    *tg->active_board = gameboard;
+    tg->active_board = gameboard;
 
     return gameboard;
 }
@@ -191,7 +187,7 @@ void tg_update_score(TetrisGame *tg, uint8_t lines_cleared) {
     tg->score += tg->level * points_per_level_cleared[lines_cleared];
 
     // update current highest cell
-    tg->board->highest_occupied_cell -= lines_cleared;
+    tg->board.highest_occupied_cell -= lines_cleared;
 
     // every 10 lines, the level increases
     static uint8_t lines_cleared_since_last_level;
@@ -224,12 +220,23 @@ void tg_update_score(TetrisGame *tg, uint8_t lines_cleared) {
 TetrisPiece create_rand_piece(TetrisGame *tg) {
     // create new piece and place in middle center
     TetrisPiece new_piece;
-    new_piece.ptype = rand() / 7 + 1;
+    new_piece.ptype = rand() % NUM_TETROMINOS + 1;
     new_piece.orientation = 0;
     new_piece.loc.col = TETRIS_COLS / 2;
     new_piece.loc.row = 2;      // CHANGE TO 1 ONCE DONE!!!!!
 
     tg->active_piece = new_piece;
+    return new_piece;
+}
+
+/**
+ * Simple function to create a new piece with the specified parameters
+*/
+TetrisPiece create_tetris_piece(enum piece_type ptype, \
+    int8_t row, int8_t col, uint8_t orientation) {
+    assert(orientation > -1 && orientation < 4 && "Orientation out of range");
+    TetrisPiece new_piece = {.ptype = ptype, .orientation = orientation, \
+        .loc.col = col, .loc.row = row };
     return new_piece;
 }
 
@@ -243,7 +250,7 @@ bool check_valid_move(TetrisGame *tg, uint8_t player_move){
     tetris_location tp_cells[NUM_CELLS_IN_TETROMINO];
     // copy offsets for current piece into tp_cells
     // @todo is this copying too much??? CHECK!!!!! 
-    memcpy(tp_cells, TETROMINOS[tp.ptype][tp.orientation], NUM_CELLS_IN_TETROMINO * sizeof(tetris_location));
+    memcpy(tp_cells, TETROMINOS[tp.ptype][tp.orientation], sizeof(tp_cells));
     // change those offsets to global piece locations
     for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
         tp_cells[i].row += tp.loc.row;
@@ -264,28 +271,32 @@ bool check_valid_move(TetrisGame *tg, uint8_t player_move){
         case T_NONE:
             return true;
             break;
-        case T_LEFT:
-            const tetris_location left_offset = {.row = 0, .col = -1};
-            // test all 4 cells in tetronimo; if any are false, move is invalid
-            for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
-                move_valid = move_valid && test_piece_offset(tg->board, tp_cells[i], left_offset);
-            }
-
-        case T_RIGHT:
-            const tetris_location right_offset = {.row = 0, .col = 1};
-            for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
-                move_valid = move_valid && test_piece_offset(tg->board, tp_cells[i], right_offset);
-            }
 
         case T_DOWN:
             const tetris_location down_offset = {.row = 1, .col = 0};
             for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
-                move_valid = move_valid && test_piece_offset(tg->board, tp_cells[i], down_offset);
+                move_valid = move_valid && test_piece_offset(&tg->board, tp_cells[i], down_offset);
             }
+            break;
+        case T_LEFT:
+            const tetris_location left_offset = {.row = 0, .col = -1};
+            // test all 4 cells in tetronimo; if any are false, move is invalid
+            for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
+                move_valid = move_valid && test_piece_offset(&tg->board, tp_cells[i], left_offset);
+            }
+            break;
+
+        case T_RIGHT:
+            const tetris_location right_offset = {.row = 0, .col = 1};
+            for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
+                move_valid = move_valid && test_piece_offset(&tg->board, tp_cells[i], right_offset);
+            }
+            break;
 
         default:
             #ifdef DEBUG_T
-            fprintf(gamelog, "check_valid_translation invalid case!\n");
+            fprintf(gamelog, "check_valid_move default case, not good!  ");
+            fprintf(gamelog, "player_move=%d \n", player_move);
             #endif
             break;
     }
@@ -303,7 +314,10 @@ bool test_piece_offset(TetrisBoard *tb, const tetris_location global_loc, const 
     testing_loc.row = global_loc.row + move_offset.row;
     testing_loc.col = global_loc.col + move_offset.col;
 
-    if (tb->board[testing_loc.row][testing_loc.col] == -1)
+    // if cell is unoccupied and not out of range
+    if (tb->board[testing_loc.row][testing_loc.col] == -1 && \
+        testing_loc.row > -1 && testing_loc.row < TETRIS_ROWS && \
+        testing_loc.col > -1 && testing_loc.col < TETRIS_COLS)
         return true;
     else
         return false;
@@ -315,6 +329,25 @@ void move_piece_left(TetrisGame *tg) {
 }
 
 void move_piece_right(TetrisGame *tg) {
+
+}
+
+
+/** 
+ * On an active_piece reaching solid ground or a
+ * row clear, move floating blocks down
+*/
+void do_gravity(TetrisGame *tg) {
+
+}
+
+
+/**
+ * On placing a piece down, the rows where it landed 
+ * need to be checked to see if they're full. If so, 
+ * they're cleared
+*/
+bool check_filled_row(TetrisGame *tg, uint8_t row) {
 
 }
 

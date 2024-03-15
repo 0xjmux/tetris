@@ -1,55 +1,24 @@
+# ESP-IDF component line (untested)
 #idf_component_register(SRCS "tetris/tetris.c" INCLUDE_DIRS "tetris/tetris.h")
 
 
-# Rewritten CMakeLists.txt for tetris game
+#cmake -DTARGET_GROUP=test {path-to-source-tree}
+# make
 
+# SET PROJECT INFO AND COMPILATION FLAGS
+########################################
 cmake_minimum_required(VERSION 3.16)
 project(tetris_driver VERSION 0.1 LANGUAGES C)
  
 set(CMAKE_C_STANDARD 11)
-
-### Require out-of-source builds
+  
+### Require out-of-source buildsw
 file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOC_PATH)
 if(EXISTS "${LOC_PATH}")
     message(FATAL_ERROR "You cannot build in a source directory (or any directory with "
                         "CMakeLists.txt file). Please make a build subdirectory. Feel free to "
                         "remove CMakeCache.txt and CMakeFiles.")
 endif()
-
-
-
-# for future; option to build for terminal use so nothing is included needlessly
-#option(BUILD_FOR_TERM "Compile game with driver for testing on normal desktop platforms" NO)
-#if (BUILD_FOR_TERM)
-#endif()
-
-# include libtetris game library
-# add_subdirectory(libtetris)
-
-file(GLOB PROJECT_SOURCE "*.c" "src/*.c")
-file(GLOB PROJECT_HEADER "include/*.h" "*.h")
-
-# set up libtetris library
-add_library(tetris STATIC tetris/tetris.c tetris/tetris.h)
-target_include_directories(tetris PUBLIC tetris)
-
-add_executable(tetris_driver ${PROJECT_SOURCE})
-# include_directories(${PROJECT_SOURCE_DIR}/include)
-target_include_directories(tetris_driver PUBLIC ${PROJECT_SOURCE_DIR}/include)
-
-
-# ncurses for GUI
-find_library(NCURSES_FOUND ncurses REQUIRED)
-target_link_libraries(${PROJECT_NAME} ncurses tetris)
-#if(NCURSES_FOUND )
-#  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ncurses)
-#  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ncurses)
-#else() 
-#  message(ERROR "NCURSES NOT FOUND!")
-#endif(NCURSES_FOUND )
-
-
-
 
 # platform-specific compilation flags
 if(UNIX)
@@ -69,3 +38,51 @@ elseif(WIN32)
 else()
     message(ERROR "PLATFORM NOT FOUND")
 endif()
+########################################
+
+file(GLOB PROJECT_SOURCE "*.c" "src/*.c")
+file(GLOB PROJECT_HEADER "include/*.h" "*.h")
+
+# don't put binaries in subdirectories under build/
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+
+# include libtetris game library
+add_subdirectory(tetris)
+
+# set up libtetris library
+#add_library(tetris STATIC tetris/tetris.c tetris/tetris.h)
+#target_include_directories(tetris PUBLIC tetris)
+
+# add_executable(tetris_driver ${PROJECT_SOURCE})
+# include_directories(${PROJECT_SOURCE_DIR}/include)
+
+
+# ncurses for GUI
+#if(NCURSES_FOUND )
+#  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ncurses)
+#  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ncurses)
+#else() 
+#  message(ERROR "NCURSES NOT FOUND!")
+#endif(NCURSES_FOUND )
+
+
+
+# this section added from cmake-unity-test
+set(TARGET_GROUP production CACHE STRING "Group to build")
+# add_subdirectory(module_a)
+
+if(TARGET_GROUP STREQUAL production)
+  include_directories(include)
+  add_subdirectory(src)
+elseif(TARGET_GROUP STREQUAL test)
+  include(CTest)
+
+  add_subdirectory(extern)
+  add_subdirectory(test)
+else()
+  message(FATAL_ERROR "Given TARGET_GROUP unknown")
+endif()
+
+
+
+

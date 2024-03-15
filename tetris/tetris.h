@@ -36,7 +36,6 @@ extern FILE *gamelog;
 #define NUM_ORIENTATIONS 4
 #define NUM_CELLS_IN_TETROMINO 4
 
-
 // piece descriptions
 // S, Z, T, L, reverse L (J), square, long bar (I)
 enum piece_type {S_PIECE, Z_PIECE, T_PIECE, L_PIECE, J_PIECE, SQ_PIECE, I_PIECE};
@@ -70,7 +69,7 @@ extern const tetris_location TETROMINOS[NUM_TETROMINOS][NUM_ORIENTATIONS][NUM_CE
  * @param tetris_location loc - piece position
  * @param orientation - piece orientation
 */
-typedef struct {
+typedef struct TetrisPiece {
     enum piece_type ptype;
     tetris_location loc;
     uint8_t orientation;    // orientation, in range 0-3
@@ -91,8 +90,7 @@ typedef struct TetrisBoard {
 } TetrisBoard;
 
 
-TetrisBoard* create_board(void);
-void delete_board(TetrisBoard *b);
+TetrisBoard init_board(void);
 
 
 /**
@@ -106,8 +104,8 @@ void delete_board(TetrisBoard *b);
  * @param level current level
 */
 typedef struct TetrisGame {
-    TetrisBoard *board;
-    TetrisBoard *active_board;
+    TetrisBoard board;
+    TetrisBoard active_board;
     TetrisPiece active_piece;
     bool game_over;
     uint16_t gravity_tick_rate;
@@ -120,10 +118,12 @@ TetrisGame* create_game(void);
 void end_game(TetrisGame *tg);
 void tg_tick(TetrisGame *tg, enum player_move move);
 
+bool check_valid_move(TetrisGame *tg, uint8_t player_move);
 
 
 TetrisBoard render_active_board(TetrisGame *tg);
 TetrisPiece create_rand_piece(TetrisGame *tg);
+TetrisPiece create_tetris_piece(enum piece_type ptype, int8_t row, int8_t col, uint8_t orientation);
 
 bool test_piece_offset(TetrisBoard *tb, const tetris_location global_loc, const tetris_location move_offset);
 

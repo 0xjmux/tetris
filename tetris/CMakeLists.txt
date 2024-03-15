@@ -1,12 +1,14 @@
-# # CMakeLists for tetris game library
+# CMakeLists for tetris game library
 
-cmake_minimum_required(VERSION 3.16)
-project(tetris VERSION 0.1 LANGUAGES C)
+#cmake_minimum_required(VERSION 3.16)
+#project(tetris VERSION 0.1 LANGUAGES C)
 
 
-file(GLOB PROJECT_SOURCES "*.c" "*.h")
+add_library(tetris STATIC tetris.c)
 
-# # add_library(${PROJECT_NAME} STATIC ${PROJECT_SOURCES})
-add_library(${PROJECT_NAME} STATIC ${PROJECT_SOURCES})
+target_include_directories(tetris PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}
+)
+
  
 # include_directories(${PROJECT_SOURCE_DIR})
