@@ -47,6 +47,7 @@ int main(void) {
     TetrisGame *tg = create_game();
     // tg->board = create_board();
     enum player_move move = T_NONE;
+    create_rand_piece(tg);      // create first piece
 
     // while game is running and player hasn't tried to quit
     while (!tg->game_over && move != T_QUIT) {

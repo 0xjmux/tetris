@@ -6,7 +6,7 @@ The game was branched off to it's own repository because the embedded project so
 
 ### TODO:
 * Finish tetris game logic
-* Set up CI/CD with GH actions
+* [X] Set up CI/CD with GH actions
 
 
 ### Project Goals

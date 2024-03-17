@@ -184,6 +184,16 @@ void test_clearRows(void) {
         TEST_ASSERT_FALSE(check_filled_row(tg, i));
     }
 
+}
+
+
+void test_checkSpawnNewPiece(void) {
+    // test piece falling case
+
+    // test piece stopped falling case
+
+
+    // test piece stopped falling invalid case
 
 
 
@@ -192,12 +202,13 @@ void test_clearRows(void) {
 int main(void)
 {
     UNITY_BEGIN();
-    // these tests assume a 16x32 board
+    // these tests assume a 16x32 board, i haven't tested otherwise
     assert(TETRIS_ROWS == 32 && TETRIS_COLS == 16);
 
     RUN_TEST(test_checkValidMove);
     RUN_TEST(test_T_testPieceRotate);
     RUN_TEST(test_clearRows);
+    // test_checkSpawnNewPiece
 
     return UNITY_END();
 }

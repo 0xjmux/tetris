@@ -279,6 +279,10 @@ bool check_valid_move(TetrisGame *tg, uint8_t player_move){
             for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
                 move_valid = move_valid && test_piece_offset(&tg->board, tp_cells[i], down_offset);
             }
+//            // if we can't move down, we must have reached the bottom
+//            if (!move_valid) {
+//                tg->active_piece.falling = false;
+//            }
             break;
         case T_LEFT:
             const tetris_location left_offset = {.row = 0, .col = -1};
@@ -367,7 +371,7 @@ bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp) {
  * need to be checked to see if they're full so they can
  * be cleared and the score can be increased
 */
-bool check_filled_row(TetrisGame *tg, uint8_t row) {
+bool check_filled_row(TetrisGame *tg, const uint8_t row) {
     
     for (int c = 0; c < TETRIS_COLS; c++) {
         if(tg->board.board[row][c] == -1)
@@ -458,9 +462,86 @@ void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows) {
 */
 bool check_and_spawn_new_piece(TetrisGame *tg) {
 
+    // if the piece is still falling, it hasn't landed yet; 
+    //  we do nothing
+    if (tg->active_piece.falling)
+        return false;
 
+    // if we're here, we must have landed
+    TetrisPiece tp = tg->active_piece; // last active piece
+    #ifdef DEBUG_T
+    fprintf(gamelog, "Piece stopped falling at loc row=%d, col=%d", tp.loc.row, tp.loc.col);
+    #endif
 
+    // set up active piece and array of offsets from current loc
+    tetris_location tp_cells[NUM_CELLS_IN_TETROMINO];
+    memcpy(tp_cells, TETROMINOS[tp.ptype][tp.orientation], sizeof(tp_cells));
+
+    // put global piece locations in tp_cells
+    for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
+        tp_cells[i].row += tp.loc.row;
+        tp_cells[i].col += tp.loc.col;
+    }
+
+    // add piece to board
+    for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
+        // set global locations on board equal to piece color
+        tg->board.board[tp_cells[i].row][tp_cells[i].col] = tp.ptype;
+    }
+
+    // some slight duplicate work here but implementation of 
+    // not doing dupliate work was complex enough that this is prob better
+    // in short, this only checks rows where piece ended up, but will 
+    // check all 4 rows; which might mean checking the same row twice
+    uint8_t rows_to_clear[4];
+    uint8_t rows_idx = 0;
+    uint8_t row_with_offset;
+    for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
+        row_with_offset = tp.loc.row + tp_cells[i].row;
+        // if row is full, add it to list of rows to clear
+        if(check_filled_row(tg, row_with_offset)) {
+            rows_to_clear[rows_idx] = row_with_offset;
+            rows_idx += 1;
+
+        }
+    }
+
+    // find top row in rows_to_clear and clear rows
+    uint8_t top_row = smallest_in_arr(rows_to_clear, rows_idx + 1);
+    clear_rows(tg, top_row, rows_idx + 1);
+
+    // NOW, WE SPAWN NEW PIECE
+    create_rand_piece(tg);
+
+    return true;
+}
+
+/**
+ * Very simple inline function for checking if an int 
+ * is already present in a short array of values
+*/
+inline bool val_in_arr(const int val, const int arr[], const size_t arr_len) {
+    for (int i = 0; i < arr_len; i++) {
+        if (arr[i] == val)
+            return true;
+    }
     return false;
+
+}
+
+/**
+ * Very simple helper function to return smallest value in array
+ * (largest 16 bit ints)
+ * (used for row clearing operation)
+*/
+int16_t smallest_in_arr(const int16_t arr[], const size_t arr_size) {
+    int16_t smallestVal = INT16_MAX;    
+    for (int i = 0; i < arr_size; i++) {
+        if (arr[i] < smallestVal) {
+            smallestVal = arr[i];
+        }
+    }
+    return smallestVal;
 }
 
 

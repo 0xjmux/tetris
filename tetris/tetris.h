@@ -138,10 +138,5 @@ bool check_and_spawn_new_piece(TetrisGame *tg);
 void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows);
 
 
-// function definitions
-// void print_piece(tetris_location** t);
-void print_piece(const tetris_location t[4][4]);
-
-
 
 #endif
