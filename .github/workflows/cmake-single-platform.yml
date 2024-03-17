@@ -34,7 +34,8 @@ jobs:
       # Build your program with the given configuration
       #run: cmake --build ${{github.workspace}}/build #--config ${{env.BUILD_TYPE}}
       run: cmake --build ${{github.workspace}}/build
-           cp ${{github.workspace}}/build/test_tetris ${{github.workspace}}/build/test/
+    - name: Copy binary to where ctest expects it
+      run: cp ${{github.workspace}}/build/test_tetris ${{github.workspace}}/build/test/
 
     - name: Test
       working-directory: ${{github.workspace}}/build
