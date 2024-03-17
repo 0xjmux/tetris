@@ -453,10 +453,14 @@ void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows) {
 /**
  * Check board piece to see if still falling. If it's stopped
  * falling, then add it to the board, and spawn a new rand piece
+ * @returns true when new piece spawned, false otherwise
  * 
 */
 bool check_and_spawn_new_piece(TetrisGame *tg) {
 
+
+
+    return false;
 }
 
 
