@@ -132,6 +132,8 @@ bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp);
 
 
 bool check_do_piece_gravity(TetrisGame *tg);
+
+bool check_filled_row(TetrisGame *tg, uint8_t row);
 bool check_and_spawn_new_piece(TetrisGame *tg);
 void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows);
 

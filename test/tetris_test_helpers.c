@@ -55,7 +55,7 @@ void fill_board_rectangle(TetrisBoard *tb, int8_t tL_row, int8_t tL_col, \
         }
     }
     #ifdef DEBUG_T
-    fprintf(gamelog, "filled cells from TL [%d,%d] to BR [%d,%d]\n", \ 
+    fprintf(gamelog, "filled cells from TL [%d,%d] to BR [%d,%d]\n", \
         tL_row, tL_col, bR_row, bR_col);
 
     #endif
