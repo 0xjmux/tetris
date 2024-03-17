@@ -1,6 +1,6 @@
 
 # don't put binaries in subdirectories under build/
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+#SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
 add_executable(test_tetris
     suite_1.c

@@ -13,7 +13,6 @@
 #include "display.h"
 #include "tetris.h"
 
-
 int main(void) {
 
 

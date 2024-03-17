@@ -6,6 +6,7 @@ CMakeFiles/
 CMakeCache.txt
 Makefile 
 cmake_install.cmake
+Testing/
 
 # ESP-IDF
 sdkconfig

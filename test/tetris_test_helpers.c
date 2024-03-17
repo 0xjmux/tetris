@@ -46,14 +46,19 @@ void setup_N_lines_board(TetrisBoard *tb, uint8_t N) {
 void fill_board_rectangle(TetrisBoard *tb, int8_t tL_row, int8_t tL_col, \
     int8_t bR_row, int8_t bR_col, int8_t fill_value) {
 
-    assert(tL_row < bR_row && tL_col < bR_col &&  \
+    assert(tL_row <= bR_row && tL_col <= bR_col &&  \
         "top left and bottom right coords not valid");
     
-    for (int r = tL_row; r < bR_row; r++) {
+    for (int r = tL_row; r <= bR_row; r++) {
         for (int c = tL_col; c < bR_col; c++) {
             tb->board[r][c] = fill_value;
         }
     }
+    #ifdef DEBUG_T
+    fprintf(gamelog, "filled cells from TL [%d,%d] to BR [%d,%d]\n", \ 
+        tL_row, tL_col, bR_row, bR_col);
+
+    #endif
 }
 
 /**
@@ -89,7 +94,8 @@ void print_board_state(TetrisBoard tb) {
  * Setup conditions for testing check_valid_move
  * @param *tg pointer to TetrisGame
  * @param gen_height height of incomplete rows to generate
- * @param testpiece pniece to use as acti
+ * @param testpiece piece to use as active_piece
+ * @param test_state test # to make debugging cases easier
  * 
 */
 void setup_moveCheck(TetrisGame *tg, uint8_t gen_height, \
@@ -159,5 +165,18 @@ void print_piece(const tetris_location t[4][4]) {
             }
         }
     }
+}
+
+/**
+ * Check `row` for occupied cells to verify if its empty
+ * @returns true if occupied cell found, false otherwise
+*/
+bool check_for_occ_cells_in_row(TetrisGame *tg, uint8_t row) {
+    for (int i = 0; i < TETRIS_COLS; i++) {
+        if (tg->board.board[row][i] != -1) 
+            return true;
+    }
+
+    return false;
 }
 

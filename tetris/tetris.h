@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>       // for time_t 
 
 #ifdef __linux__
 #include <stdio.h>
@@ -73,6 +74,7 @@ typedef struct TetrisPiece {
     enum piece_type ptype;
     tetris_location loc;
     uint8_t orientation;    // orientation, in range 0-3
+    bool falling;
 } TetrisPiece;
 
 /**
@@ -111,8 +113,8 @@ typedef struct TetrisGame {
     uint16_t gravity_tick_rate;
     uint32_t score;
     uint32_t level;
+    time_t last_gravity_tick;
 } TetrisGame;
-
 
 TetrisGame* create_game(void);
 void end_game(TetrisGame *tg);
@@ -127,6 +129,11 @@ TetrisPiece create_tetris_piece(enum piece_type ptype, int8_t row, int8_t col, u
 
 bool test_piece_offset(TetrisBoard *tb, const tetris_location global_loc, const tetris_location move_offset);
 bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp);
+
+
+bool check_do_piece_gravity(TetrisGame *tg);
+bool check_and_spawn_new_piece(TetrisGame *tg);
+void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows);
 
 
 // function definitions

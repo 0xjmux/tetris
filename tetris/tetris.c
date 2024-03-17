@@ -13,6 +13,14 @@ FILE *gamelog;
 #endif
 
 
+
+// when piece hits bottom, add it to board; 
+// then check if rows where piece landed need to be cleared. 
+// if so, pass it to clear rows, clear them out, and pass it down
+
+
+
+
 /**
  * Function to create a board WITHOUT using 
  * malloc and ptrs
@@ -78,11 +86,12 @@ void tg_tick(TetrisGame *tg, enum player_move move) {
 
 
     render_active_board(tg);
+    check_do_piece_gravity(tg);
+
     #ifdef DEBUG_T
     fprintf(gamelog, ".");
     fflush(gamelog);
     #endif
-
 
     switch (move) {
         case T_NONE:
@@ -90,8 +99,8 @@ void tg_tick(TetrisGame *tg, enum player_move move) {
 
         case T_UP:
             if(test_piece_rotate(&tg->board, tg->active_piece))
-                fprintf(gamelog, "piece rotated (not impl yet)\n");
-                // HANDLE ACTUALLY ROTATING PIECE HERE!!!!
+                // fprintf(gamelog, "piece rotated (not impl yet)\n");
+                tg->active_piece.orientation = (tg->active_piece.orientation + 1) % 4;
 
         case T_DOWN:
             if(check_valid_move(tg, move))
@@ -217,6 +226,7 @@ TetrisPiece create_rand_piece(TetrisGame *tg) {
     new_piece.orientation = 0;
     new_piece.loc.col = TETRIS_COLS / 2;
     new_piece.loc.row = 2;      // CHANGE TO 1 ONCE DONE!!!!!
+    new_piece.falling = true;
 
     tg->active_piece = new_piece;
     return new_piece;
@@ -229,7 +239,7 @@ TetrisPiece create_tetris_piece(enum piece_type ptype, \
     int8_t row, int8_t col, uint8_t orientation) {
     assert(orientation > -1 && orientation < 4 && "Orientation out of range");
     TetrisPiece new_piece = {.ptype = ptype, .orientation = orientation, \
-        .loc.col = col, .loc.row = row };
+        .loc.col = col, .loc.row = row , .falling=true};
     return new_piece;
 }
 
@@ -352,8 +362,6 @@ bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp) {
 }
 
 
-
-
 /**
  * On placing a piece down, the rows where it landed 
  * need to be checked to see if they're full so they can
@@ -365,16 +373,89 @@ bool check_filled_row(TetrisGame *tg, uint8_t row) {
         if(tg->board.board[row][c] == -1)
             return false;
     }
+    return true;
+}
+
+
+/** 
+ * Check if piece needs to be dropped down by comparing game 
+ * time to tick, and if so update piece location accordingly
+ * @returns true if piece moved down, false otherwise
+ *  if piece is unable to be moved down (reached bottom), 
+ *  returns false & active_piece.falling changed to false
+*/
+bool check_do_piece_gravity(TetrisGame *tg) {
+    // if time has passed tick interval
+
+    // get curr system time
+    time_t curr_time = time(NULL);
+
+    // check if it's time for piece to be moved down
+    if (curr_time - tg->last_gravity_tick > tg->gravity_tick_rate) {
+
+        // if can move down
+        if(check_valid_move(tg, T_DOWN)) {
+            tg->active_piece.loc.row += 1; // move location down
+            #ifdef DEBUG_T
+            fprintf(gamelog, "Gravity tick activated systime=%ld, last tick=%ld: piece moved down", \
+                curr_time, tg->last_gravity_tick);
+            #endif
+            tg->last_gravity_tick = curr_time;  // update gravity tick
+
+        }
+        else {
+            // if can't move piece down, change falling to false and ret false
+            #ifdef DEBUG_T
+            fprintf(gamelog, "Gravity tick activated: move down failed");
+            #endif
+            tg->active_piece.falling = false;
+            return false;
+        }
+    }    
+    else {
+        return false;
+    }
 
     return true;
 }
 
 
+// this function was written while braindead
 /**
  * Clear row `row` and move all cells above it down one; 
  * filling in now empty spots with BG_COLOR
+ * this function assumes `row` has already been checked to be filled
+ * @param tg TetrisGame
+ * @param top_row top row of the rows being cleared
+ * @param num_rows number of rows to clear
 */
-void clear_row(TetrisGame *tg, uint8_t row) {
+void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows) {
+    // starting at `row`, go up until you reach cell with value -1 
+    // or the top of the board
+    assert(num_rows <= 4 && top_row < TETRIS_ROWS);
+
+    //  for each col on the board
+    for (int col = 0; col < TETRIS_COLS; col++) {
+        // starting at bottom row, move everything above it down
+        // by num_rows
+        for (int i = top_row + num_rows - 1; i > 1; i--) {
+            // possible edge case here with very top row?
+            // get next row and move it down
+            tg->board.board[i][col] = tg->board.board[i-num_rows][col];
+        }
+    }
+
+    // move highest occupied cell down by how many rows were cleared
+    tg->board.highest_occupied_cell += num_rows;
+}
+
+
+/**
+ * Check board piece to see if still falling. If it's stopped
+ * falling, then add it to the board, and spawn a new rand piece
+ * 
+*/
+bool check_and_spawn_new_piece(TetrisGame *tg) {
 
 }
 
