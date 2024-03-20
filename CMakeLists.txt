@@ -23,11 +23,11 @@ endif()
 # platform-specific compilation flags
 if(UNIX)
   message(INFO "LINUX DETECTED")
-  set(CMAKE_C_FLAGS_DEBUG "-ggdb")
+  set(CMAKE_C_FLAGS_DEBUG "-ggdb -O0")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 
   # it didn't like the normal way of doing it so here we are
-  set(CMAKE_C_FLAGS "-Wall -g -ggdb")
+  set(CMAKE_C_FLAGS "-Wall -g -ggdb -O0")
 
 #   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 elseif(WIN32)

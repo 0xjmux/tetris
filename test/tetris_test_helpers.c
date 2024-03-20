@@ -123,8 +123,7 @@ void setup_moveCheck(TetrisGame *tg, uint8_t gen_height, \
  * Print all tetrominos to terminal to verify correct configurations
 */
 void print_all_tetrominos(void) {
-    uint8_t num_tetrominos = 3;     // number of currently impl tetrominos
-    // uint8_t num_tetrominos = NUM_TETROMINOS;     // number of currently impl tetrominos
+    uint8_t num_tetrominos = NUM_TETROMINOS;     // number of currently impl tetrominos
     // print piece definitions out to console for confirmation
     for (int i = 0; i < num_tetrominos; i++) {
         printf("Piece: %d\n", i);

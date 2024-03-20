@@ -7,7 +7,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <time.h>   // sleep
+#include <time.h>   // sleep, timespec
+#include <sys/time.h>
 
 #include <assert.h>
 #include <ncurses.h>
@@ -29,6 +30,8 @@
 #define SCORE_WIN_ROWS 10
 #define SCORE_WIN_COLS 30
 
+#define SCREEN_REFRESH_INTERVAL_USEC 25000 // 50ms
+
 
 // ncursew macros to print out filled and empty cells
 #define ADD_BLOCK(w,x) waddch((w),' '|A_REVERSE|COLOR_PAIR(x));     \
@@ -42,4 +45,8 @@ void update_score(WINDOW *w, TetrisGame *tg);
 void print_keypress(enum player_move move);
 
 void sleep_millis(uint16_t millis);
+void print_board_state(TetrisBoard tb);
+
+// void refresh_debug_var_window(WINDOW *w, enum player_move move);
+void refresh_debug_var_window(WINDOW *w);
 #endif

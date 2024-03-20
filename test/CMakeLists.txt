@@ -7,6 +7,7 @@ add_executable(test_tetris
     tetris_test_helpers.c
 )
 
+target_compile_definitions(test_tetris PUBLIC TETRIS_UNIT_TEST_DEF=1)
 target_link_libraries(test_tetris
     tetris
     Unity

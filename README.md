@@ -7,6 +7,9 @@ The game was branched off to it's own repository because the embedded project so
 ### TODO:
 * Finish tetris game logic
 * [X] Set up CI/CD with GH actions
+* fix gameover state not detected
+* fix full lines not being removed
+* fix duplicate colors
 
 
 ### Project Goals

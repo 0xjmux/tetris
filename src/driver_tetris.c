@@ -13,6 +13,15 @@
 #include "display.h"
 #include "tetris.h"
 
+// show extra window with debugging information
+#define DEBUG_T_WIN 1
+#ifdef DEBUG_T_WIN
+WINDOW *dbg_win;
+#endif
+
+// needs to be here for debug_win
+TetrisGame *tg;
+
 int main(void) {
 
 
@@ -24,6 +33,7 @@ int main(void) {
     keypad(stdscr, TRUE);    // enable use of arrow and function keys
     curs_set(0);   // don't show cursor on screen 
     timeout(0);         // dont block on getch()
+    nodelay(stdscr, TRUE);
     // getmaxyx(stdscr, row, col);      // get window size to int row, int col
     
     // refresh();
@@ -39,15 +49,31 @@ int main(void) {
     box(g_win, 0,0);
     box(s_win, 0,0);
 
-
-
     wrefresh(g_win);
     wrefresh(s_win);
 
-    TetrisGame *tg = create_game();
+    // CREATE DEBUG WINDOW
+    #ifdef DEBUG_T_WIN
+    dbg_win = newwin(winheight + 2 - SCORE_WIN_ROWS,  SCORE_WIN_COLS, \
+     2 + SCORE_WIN_ROWS, winwidth + 5); // score window
+    box(dbg_win, 0, 0);
+    wrefresh(dbg_win);
+
+    #endif
+
+    
+
+    tg = create_game();
     // tg->board = create_board();
     enum player_move move = T_NONE;
     create_rand_piece(tg);      // create first piece
+
+    #ifdef DEBUG_T
+    fprintf(gamelog, "========================================\n");
+    fprintf(gamelog, "====       Starting new game!       ====\n");
+    fprintf(gamelog, "========================================\n");
+    fflush(gamelog);
+    #endif
 
     // while game is running and player hasn't tried to quit
     while (!tg->game_over && move != T_QUIT) {
@@ -56,10 +82,13 @@ int main(void) {
         tg_tick(tg, move);
 
         // display board
-        display_board(g_win, &tg->board);
+        display_board(g_win, &tg->active_board);
         update_score(s_win, tg);
 
-        sleep_millis(10);       // delay for 10ms (will be replaced with ISR)
+
+// TWO ISSUES 4:30PM 3/17:
+// gravity tick not working
+// board update without move not working
         
 
         switch(getch()) {
@@ -84,6 +113,7 @@ int main(void) {
             default:
                 move = T_NONE;
         }
+        sleep_millis(10);       // delay for 10ms (will be replaced with ISR)
 
         // print keypress for debugging
         #ifdef DEBUG_T
@@ -105,26 +135,60 @@ int main(void) {
  * Draw board array presented by tetris game
 */
 void display_board(WINDOW *w, TetrisBoard *tb) {
-    box(w, 0,0);
 
+    static struct timeval last_update;
 
-    // draw existing pieces on board
-    for (int i = 0; i < TETRIS_ROWS; i++) {
-        // move ncurses cursor
-        wmove(w, 1 + i, 1);
-        for (int j = 0; j < TETRIS_COLS; j++) {
+    struct timeval curr_time_usec;
+    gettimeofday(&curr_time_usec, NULL);
+    int32_t usec_timediff = curr_time_usec.tv_usec - last_update.tv_usec; 
+    // if it flows below zero, (seconds ticks over, but us doesn't) just run it
+    if (usec_timediff > SCREEN_REFRESH_INTERVAL_USEC || usec_timediff < 0) {
+            // possible issue on first call with setting val of last_update
 
-            if (tb->board[i][j] >= 0) {
-                ADD_BLOCK(w, tb->board[i][j]);
+        werase(w);
+        box(w, 0,0);
+        // draw existing pieces on board
+        for (int i = 0; i < TETRIS_ROWS; i++) {
+            // move ncurses cursor
+            wmove(w, 1 + i, 1);
+            for (int j = 0; j < TETRIS_COLS; j++) {
+
+                if (tb->board[i][j] >= 0) {
+                    ADD_BLOCK(w, tb->board[i][j]);
+                }
+                else {
+                    ADD_EMPTY(w);
+                }
+
             }
-            else {
-                ADD_EMPTY(w);
-            }
-
         }
-    }
 
-    wrefresh(w);
+        last_update = curr_time_usec;
+        wrefresh(w);
+        #ifdef DEBUG_T
+        fprintf(gamelog, "display_board()\n");
+        // print_board_state(*tb);
+        fflush(gamelog);
+        #endif
+
+        #ifdef DEBUG_T_WIN
+        refresh_debug_var_window(dbg_win);
+
+
+        #endif
+
+        // wnoutrefresh(w);
+    }
+    // else {
+        // #ifdef DEBUG_T
+        // fprintf(gamelog, "last update timer: %ld ; curr_time = %ld, last_update=%ld\n", \
+        //  curr_time_usec.tv_usec - last_update.tv_usec, curr_time_usec.tv_usec, last_update.tv_usec);
+        // #endif
+
+    // }
+    if (curr_time_usec.tv_sec - last_update.tv_sec > 1) {
+
+    }
 
 }
 
@@ -160,9 +224,66 @@ void print_keypress(enum player_move move) {
 /**
  * POSIX sleep for `millis` milliseconds
 */
+// `man 2 nanosleep`
 void sleep_millis(uint16_t millis) {
-    struct timespec t;
-    t.tv_sec = 0;
-    t.tv_nsec = millis * 1000 * 1000;
-    nanosleep(&t, NULL);
+    struct timespec ts;
+    ts.tv_sec = 0;
+    ts.tv_nsec = millis * 1000; // * 1000;
+    nanosleep(&ts, NULL);
+}
+
+
+void refresh_debug_var_window(WINDOW *w) {
+    wclear(w);
+    box(w,0,0);
+    wmove(w, 1, 1);
+    TetrisPiece tp = tg->active_piece;
+    char const* piece_str[] =  {"S_PIECE", "Z_PIECE", "T_PIECE", "L_PIECE", "J_PIECE", "SQ_PIECE", "I_PIECE"};
+    char const* move_str[] =  {"T_NONE", "T_UP", "T_DOWN", "T_LEFT", \
+    "T_RIGHT", "T_PLAYPAUSE", "T_QUIT"};
+
+    mvwprintw(w, 1,1, "DEBUG INFO:\n");
+    // mvwprintw(w, 2,1, "Current move: %s\n", move_str[move]);
+    mvwprintw(w, 3,1, "Piece: %s\n", piece_str[tp.ptype]);
+    mvwprintw(w, 4,1, "Piece Row: %d   Piece col: %d\n", tp.loc.row, tp.loc.col);
+    mvwprintw(w, 5,1, "Orientation: %d   Falling?: %d\n", tp.orientation, tp.falling);
+    mvwprintw(w, 6,1, "BOARD INFO: highest cell: %d\n", tg->board.highest_occupied_cell);
+
+
+
+    wnoutrefresh(w);
+
+}
+
+
+
+/**
+ * Print current board state to console
+ * (duplicate from tetris_test_helpers)
+*/
+void print_board_state(TetrisBoard tb) {
+    // draw existing pieces on board
+    fprintf(gamelog, "Highest occupied cell: %d\n   ", tb.highest_occupied_cell);
+    fprintf(gamelog, "  ");
+    for (int i = 0; i < TETRIS_COLS; i++) 
+        fprintf(gamelog, "%-2d  ",i);
+    fprintf(gamelog, "\n   ");
+
+    for (int i = 0; i < TETRIS_COLS; i++) 
+        fprintf(gamelog, "----");
+    fprintf(gamelog, "----\n");
+
+    for (int i = 0; i < TETRIS_ROWS; i++) {
+        fprintf(gamelog, "%-3d| ", i);
+        for (int j = 0; j < TETRIS_COLS; j++) {
+            if (tb.board[i][j] >= 0) {
+                fprintf(gamelog, "%-3d ", tb.board[i][j]);
+            }
+            else {
+                fprintf(gamelog, "    ");
+            }
+        }
+        fprintf(gamelog, "|\n");
+    }
+    fflush(gamelog);
 }

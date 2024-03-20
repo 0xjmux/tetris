@@ -9,13 +9,13 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <time.h>       // for time_t 
 
 #ifdef __linux__
 #include <stdio.h>
 #include <stdlib.h>         // used for malloc(), free()
 #include <assert.h>
 #include <string.h>         // memcpy
+#include <sys/time.h>       // timeval for microsecond time intervals
 #endif
 
 // TETRIS GAME LOGIC DEBUG FLAG
@@ -56,8 +56,8 @@ static const uint16_t points_per_level_cleared[] = {0, 100, 300, 500, 800};
  * Negative numbers allowed.
 */
 typedef struct tetris_location {
-    int8_t row;
-    int8_t col;
+    int16_t row;
+    int16_t col;
 } tetris_location;
 
 // tetris piece descriptions - defined here to prevent multiple definition
@@ -101,19 +101,23 @@ TetrisBoard init_board(void);
  * @param active_board 2D struct array representing entire board 
  *  (including falling piece)
  * @param game_over bool true if game over, false if not
- * @param gravity_tick_rate millis between each gravity tick
+ * @param gravity_tick_rate usec between each gravity tick
  * @param score player's current score
  * @param level current level
+ * @param last_gravity_tick_usec last time active_piece was moved down
 */
 typedef struct TetrisGame {
     TetrisBoard board;
     TetrisBoard active_board;
     TetrisPiece active_piece;
     bool game_over;
-    uint16_t gravity_tick_rate;
     uint32_t score;
     uint32_t level;
-    time_t last_gravity_tick;
+    uint32_t gravity_tick_rate_usec;
+
+    // uint32_t last_gravity_tick_usec;
+    // this requires <sys/time.h>
+    struct timeval last_gravity_tick_usec;
 } TetrisGame;
 
 TetrisGame* create_game(void);
@@ -125,7 +129,7 @@ bool check_valid_move(TetrisGame *tg, uint8_t player_move);
 
 TetrisBoard render_active_board(TetrisGame *tg);
 TetrisPiece create_rand_piece(TetrisGame *tg);
-TetrisPiece create_tetris_piece(enum piece_type ptype, int8_t row, int8_t col, uint8_t orientation);
+TetrisPiece create_tetris_piece(enum piece_type ptype, int16_t row, int16_t col, uint8_t orientation);
 
 bool test_piece_offset(TetrisBoard *tb, const tetris_location global_loc, const tetris_location move_offset);
 bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp);
@@ -138,5 +142,7 @@ bool check_and_spawn_new_piece(TetrisGame *tg);
 void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows);
 
 
+int32_t get_elapsed_us(struct timeval before, struct timeval after);
+int16_t smallest_in_arr(int16_t arr[], const size_t arr_size);
 
 #endif

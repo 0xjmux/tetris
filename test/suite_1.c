@@ -4,11 +4,22 @@
 
 #include <unity.h>
 
+#include <time.h>   // for testing timing
+#include <unistd.h> // for sleep()
+
 #include "tetris.h"
 #include "tetris_test_helpers.h"
 
 TetrisGame *tg;
 TetrisBoard tb;
+
+#define TETRIS_UNIT_TEST_DEF 1
+
+//#ifdef DEBUG_T
+//#include <stdio.h>
+//// DEBUG_T is tetris game logic debug flag
+//// linker didn't like it being included normally
+//#endif
 
 /**
  * Runs before each test
@@ -16,6 +27,11 @@ TetrisBoard tb;
 void setUp(void) {
     tg = create_game();
     tb = init_board();
+    #ifdef DEBUG_T
+    gamelog = stdout;
+    fprintf(gamelog, "log redirect to stdout setup");
+    fflush(gamelog);
+    #endif
 
 }
 
@@ -190,13 +206,57 @@ void test_clearRows(void) {
 void test_checkSpawnNewPiece(void) {
     // test piece falling case
 
-    // test piece stopped falling case
+    TetrisPiece tp;
+    int test_case = 1;
+
+    // S piece bottom right corner
+    tp = create_tetris_piece(S_PIECE, TETRIS_ROWS - 7, TETRIS_COLS - 3, 3);
+    setup_moveCheck(tg, 5, tp, &test_case);
+    // rows indexed from top, so this is rows 2&3
+    // print_board_state(tg->board);
+    TEST_ASSERT_FALSE_MESSAGE(check_and_spawn_new_piece(tg), \
+        "Shouldn't spawn new piece when current one still active");
+    // bypass time check in game logic
+    tg->gravity_tick_rate_usec = 0; 
+    // tg->last_gravity_tick_usec = 
+    gettimeofday(&tg->last_gravity_tick_usec, NULL);
+    // do gravity should fail since we're at bottom, and 
+    //  should change active_piece.falling to false
+    TEST_ASSERT_FALSE_MESSAGE(check_do_piece_gravity(tg), \
+        "Incorrect gravity check return for piece at bottom");
+    TEST_ASSERT_FALSE_MESSAGE(tg->active_piece.falling, \
+        "Piece should have falling=false");
+    
+    // now that piece has landed, putting it into board and 
+    //  spawning a new one should succeed
+    TEST_ASSERT_TRUE_MESSAGE(check_and_spawn_new_piece(tg), \
+        "Spawn new piece when active_piece.falling=false failed");
+
+    TEST_ASSERT_EQUAL_INT8_MESSAGE(25, tg->board.highest_occupied_cell, \
+        "highest occupied cell not updated correctly");
+    print_board_state(tg->board);
+
 
 
     // test piece stopped falling invalid case
 
 
 
+    // test piece stopped falling game over condition
+
+}
+
+
+void test_getElapsedUs(void) {
+    struct timeval before, after;
+    const uint32_t ms_in_1s = 1000000;
+    int32_t elapsed_us;
+    gettimeofday(&before, NULL);
+    sleep(1);
+    gettimeofday(&after, NULL);
+    elapsed_us = get_elapsed_us(before, after);
+    TEST_ASSERT_TRUE_MESSAGE(elapsed_us > ms_in_1s - 1000 && elapsed_us < ms_in_1s + 1000, \
+         "delay function returned incorrect range");
 }
 
 int main(void)
@@ -208,7 +268,9 @@ int main(void)
     RUN_TEST(test_checkValidMove);
     RUN_TEST(test_T_testPieceRotate);
     RUN_TEST(test_clearRows);
-    // test_checkSpawnNewPiece
+    RUN_TEST(test_checkSpawnNewPiece);
+    RUN_TEST(test_getElapsedUs);
+    
 
     return UNITY_END();
 }
