@@ -425,6 +425,7 @@ bool check_do_piece_gravity(TetrisGame *tg) {
 
     // check if it's time for piece to be moved down
     int32_t time_diff_usec = get_elapsed_us(tg->last_gravity_tick_usec, curr_time_usec);
+
     if ( time_diff_usec > tg->gravity_tick_rate_usec) {
 
         // if can move down

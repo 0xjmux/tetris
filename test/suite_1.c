@@ -215,10 +215,16 @@ void test_checkSpawnNewPiece(void) {
     // print_board_state(tg->board);
     TEST_ASSERT_FALSE_MESSAGE(check_and_spawn_new_piece(tg), \
         "Shouldn't spawn new piece when current one still active");
+
     // bypass time check in game logic
     tg->gravity_tick_rate_usec = 0; 
-    // tg->last_gravity_tick_usec = 
     gettimeofday(&tg->last_gravity_tick_usec, NULL);
+    tg->last_gravity_tick_usec.tv_sec -= 1;
+    tg->last_gravity_tick_usec.tv_usec -= 100;
+
+    // printf("last_grav_tick: %d:%d, tick_rate: %d\n", tg->last_gravity_tick_usec.tv_sec, \
+    // tg->last_gravity_tick_usec.tv_usec, tg->gravity_tick_rate_usec);
+
     // do gravity should fail since we're at bottom, and 
     //  should change active_piece.falling to false
     TEST_ASSERT_FALSE_MESSAGE(check_do_piece_gravity(tg), \
@@ -248,13 +254,14 @@ void test_checkSpawnNewPiece(void) {
 
 void test_getElapsedUs(void) {
     struct timeval before, after;
-    const uint32_t ms_in_1s = 1000000;
+    const uint32_t ms_in_1s = 1000;
     int32_t elapsed_us;
     gettimeofday(&before, NULL);
-    sleep(1);
+    sleep_millis(1000);
     gettimeofday(&after, NULL);
     elapsed_us = get_elapsed_us(before, after);
-    TEST_ASSERT_TRUE_MESSAGE(elapsed_us > ms_in_1s - 1000 && elapsed_us < ms_in_1s + 1000, \
+    // printf("elapsed_us: %d\n", elapsed_us);
+    TEST_ASSERT_TRUE_MESSAGE(elapsed_us > ms_in_1s - 100 && elapsed_us < ms_in_1s + 100, \
          "delay function returned incorrect range");
 }
 
