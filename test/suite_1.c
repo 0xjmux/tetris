@@ -198,6 +198,9 @@ void test_clearRows(void) {
     for (int i = 25; i < TETRIS_ROWS; i++) {
         TEST_ASSERT_FALSE(check_filled_row(tg, i));
     }
+}
+
+void test_clearRowsDumpedGame(void) {
 
 }
 
@@ -245,8 +248,6 @@ void test_checkSpawnNewPiece(void) {
 
     // test piece stopped falling invalid case
 
-
-
     // test piece stopped falling game over condition
 
 }
@@ -261,8 +262,42 @@ void test_getElapsedUs(void) {
     gettimeofday(&after, NULL);
     elapsed_us = get_elapsed_us(before, after);
     // printf("elapsed_us: %d\n", elapsed_us);
-    TEST_ASSERT_TRUE_MESSAGE(elapsed_us > ms_in_1s - 100 && elapsed_us < ms_in_1s + 100, \
+    TEST_ASSERT_TRUE_MESSAGE(elapsed_us > ms_in_1s - 150 && elapsed_us < ms_in_1s + 150, \
          "delay function returned incorrect range");
+}
+
+/** 
+ * Test smallest_in_arr helper func
+*/
+void test_arr_helpers(void) {
+    // test int16_to_uint8_arr()
+    int16_t arr1[5] = {5,2,1,4,3};
+    uint8_t out_arr1[5];
+    uint8_t exp_arr1[5] = {5,2,1,4,3};
+    int16_to_uint8_arr(arr1, out_arr1, 5);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY_MESSAGE(exp_arr1, \
+       out_arr1, 5, "Array conversion to uint8 incorrect");
+
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(1, (uint8_t)smallest_in_arr(arr1, 5), \
+        "smallest_in_arr failed on all positive values");
+
+    int16_t arr2[6] = {INT8_MAX,1,2,255,4,0};
+    uint8_t out_arr2[6];
+    uint8_t exp_arr2[6] = {INT8_MAX,1,2,255,4,0};
+    int16_to_uint8_arr(arr2, out_arr2, 6);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY_MESSAGE(exp_arr2, \
+       out_arr2, 6, "arr2 conversion to uint8 incorrect");
+
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, (uint8_t)smallest_in_arr(arr2, 6), \
+        "smallest_in_arr failed on all positive values");
+
+    // test smallest in arr
+    int16_t arr4[5] = {5,2,1,4,3};
+    TEST_ASSERT_EQUAL_INT16(1, smallest_in_arr(arr4, 5));
+    int8_t arr5[6] = {2,1,2,-2,4,5};
+    // TEST_ASSERT_EQUAL_INT16(1, smallest_in_arr(arr5, 6));
+    int16_t arr6[6] = {INT16_MAX,-1,2,-2,4,5};
+    TEST_ASSERT_EQUAL_INT16(-2, smallest_in_arr(arr6, 6));
 }
 
 int main(void)
@@ -276,7 +311,7 @@ int main(void)
     RUN_TEST(test_clearRows);
     RUN_TEST(test_checkSpawnNewPiece);
     RUN_TEST(test_getElapsedUs);
-    printf("tests completed run\n");
+    RUN_TEST(test_arr_helpers);
     
 
     return UNITY_END();

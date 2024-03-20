@@ -90,20 +90,20 @@ void end_game(TetrisGame *tg) {
  * Process a single game tick
  * @param TetrisGame *tg
  * @param player_move move
+ * @returns true if game is still going, false when game_over
 */
-void tg_tick(TetrisGame *tg, enum player_move move) {
+bool tg_tick(TetrisGame *tg, enum player_move move) {
 
     // handle gravity, input, cleared lines, adjusting score, checking game over
 
 
     check_do_piece_gravity(tg);
     check_and_spawn_new_piece(tg);
+    if (! check_game_over(tg))         // not fully implemented yet
+        return false;
     render_active_board(tg);
 
-    #ifdef DEBUG_T
-    // fprintf(gamelog, ".");
-    // fflush(gamelog);
-    #endif
+ 
 
     switch (move) {
         case T_NONE:
@@ -145,7 +145,7 @@ void tg_tick(TetrisGame *tg, enum player_move move) {
             break;
     }
 
-
+    return true;
 }
 
 
@@ -176,8 +176,12 @@ TetrisBoard render_active_board(TetrisGame *tg) {
     #endif
 
     // starting at tetris_location fill cells using relative locations from TETROMINOS
-    for(int i = 0; i < 4; i++) {
+    for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
         tetris_location curr_offset = tp_cells[i];
+
+        // saw a crash here, so lets check for values - issue should be fixed but still
+        assert(curr_offset.col < TETRIS_COLS && curr_offset.row < TETRIS_ROWS && "curr_offset out of bounds");
+
         // update board to reflect placement of piece
         gameboard.board[tp.loc.row + curr_offset.row] \
             [tp.loc.col + curr_offset.col] = tp.ptype;
@@ -236,10 +240,10 @@ TetrisPiece create_rand_piece(TetrisGame *tg) {
     TetrisPiece new_piece;
 
 
-    new_piece.ptype = rand() % NUM_TETROMINOS + 1;
+    new_piece.ptype = rand() % NUM_TETROMINOS;
     new_piece.orientation = 0;
     new_piece.loc.col = TETRIS_COLS / 2;
-    new_piece.loc.row = 2;      // CHANGE TO 1 ONCE DONE!!!!!
+    new_piece.loc.row = 1;
     new_piece.falling = true;
 
     tg->active_piece = new_piece;
@@ -385,9 +389,10 @@ bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp) {
             testing_loc.col > -1 && testing_loc.col < TETRIS_COLS)
             result = result && true;
         else
-            result = false;
+            return false;
     }
 
+    // this could just be return true but whatever
     return result;
 }
 
@@ -501,18 +506,19 @@ bool check_and_spawn_new_piece(TetrisGame *tg) {
     // if we're here, we must have landed
     TetrisPiece tp = tg->active_piece; // last active piece
     #ifdef DEBUG_T
-    fprintf(gamelog, "Piece stopped falling at loc row=%d, col=%d", tp.loc.row, tp.loc.col);
+    fprintf(gamelog, "Piece stopped falling at loc row=%d, col=%d\n", tp.loc.row, tp.loc.col);
+    fflush(gamelog);
     #endif
 
     // set up active piece and array of offsets from current loc
     tetris_location tp_cells[NUM_CELLS_IN_TETROMINO];
-    memcpy(tp_cells, TETROMINOS[tp.ptype][tp.orientation], sizeof(tp_cells));
-
-    // put global piece locations in tp_cells
-    for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
+    for (int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
+        tp_cells[i] = TETROMINOS[tp.ptype][tp.orientation][i];
+        // put global piece locations in tp_cells
         tp_cells[i].row += tp.loc.row;
         tp_cells[i].col += tp.loc.col;
     }
+
 
     // add piece to board
     for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
@@ -522,18 +528,20 @@ bool check_and_spawn_new_piece(TetrisGame *tg) {
 
 
 
-    // some slight duplicate work here but implementation of 
-    // not doing dupliate work was complex enough that this is prob better
-    // in short, this only checks rows where piece ended up, but will 
-    // check all 4 rows; which might mean checking the same row twice
-    int16_t rows_to_clear[4];
+    /* some slight duplicate work here but implementation of 
+     * not doing dupliate work was complex enough that this is prob better.
+     * 
+     * in short, this only checks rows where piece ended up, but will 
+     * check all 4 rows; which might mean checking the same row twice
+    */ 
+    uint8_t rows_to_clear[4];
     uint8_t rows_idx = 0;
-    int16_t row_with_offset;
-    int16_t new_max_row = TETRIS_ROWS;
+    uint8_t row_with_offset;
+    uint8_t new_max_row = TETRIS_ROWS;
     for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
         row_with_offset = tp_cells[i].row;
 
-        assert(row_with_offset < TETRIS_ROWS && "global row out of bounds");
+        assert(row_with_offset < TETRIS_ROWS && row_with_offset > -1 && "global row out of bounds");
 
         // if row is full, add it to list of rows to clear
         if(check_filled_row(tg, row_with_offset)) {
@@ -554,7 +562,7 @@ bool check_and_spawn_new_piece(TetrisGame *tg) {
     // if we have rows to clear:
     if (rows_idx > 0) {
         // find top row in rows_to_clear and clear rows
-        int16_t top_row = smallest_in_arr(rows_to_clear, rows_idx + 1);
+        uint8_t top_row = (uint8_t) smallest_in_arr(rows_to_clear, rows_idx + 1);
         #ifdef DEBUG_T
             fprintf(gamelog, "clearing %d rows with top_row=%d\n", rows_idx + 1, top_row);
             fflush(gamelog);
@@ -581,6 +589,14 @@ bool check_game_over(TetrisGame *tg) {
     // game over condition. it keeps adding pieces on top of each other, 
     // whcih is a mess.
 
+
+
+    // NOT FINISHED BEING IMPL YET
+
+    // if we get to 1 as a highest occupied cell, stop
+    if (tg->board.highest_occupied_cell == 1)
+        return true;
+
     return false;
 
 }
@@ -600,16 +616,27 @@ bool check_game_over(TetrisGame *tg) {
 //}
 
 /**
- * Very simple helper function to return smallest value in array
- * (uint8_t only, used for row clearing operation)
+ * Simple helper function to return smallest value in array
+ * (int16_t only, used for row clearing operation)
 */
-int16_t smallest_in_arr(int16_t arr[], const size_t arr_size) {
+int16_t smallest_in_arr(int16_t arr[], uint8_t arr_size) {
     int smallestVal = INT16_MAX;    
     for (int i = 0; i < arr_size; i++) {
         if (arr[i] < smallestVal) {
             smallestVal = arr[i];
         }
     }
+
+    #ifdef DEBUG_T
+
+    fprintf(gamelog, "smallest value in array {");
+    for (int i = 0; i < arr_size; i++) {
+        fprintf(gamelog, "%d, ", arr[i]);
+    }
+    fprintf(gamelog, "} is %d!\n", smallestVal);
+
+    #endif
+
     return smallestVal;
 }
 
@@ -631,6 +658,18 @@ inline int32_t get_elapsed_us(struct timeval before, struct timeval after) {
         elapsed_us = 100000 + after.tv_usec - before.tv_usec;
     }
     return elapsed_us;
+}
+
+/**
+ * convert input array of int16_t to uint8_t 
+*/
+void int16_to_uint8_arr(int16_t *in_arr, uint8_t *out_arr, uint8_t arr_size) {
+    uint8_t new_value;
+    for (int i = 0; i < arr_size; i++) {
+        // out_arr[i] = (uint8_t) ((in_arr[i]) >> 8);
+        assert(in_arr[i] < 256 && in_arr[i] > -1 && "Can't cast OOB int16 to uint8!");
+        out_arr[i] = (uint8_t) (in_arr[i]);
+    }
 }
 
 

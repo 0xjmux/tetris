@@ -72,6 +72,7 @@ set(TARGET_GROUP production CACHE STRING "Group to build")
 # add_subdirectory(module_a)
 
 if(TARGET_GROUP STREQUAL production)
+  add_subdirectory(extern)
   include_directories(include)
   add_subdirectory(src)
 elseif(TARGET_GROUP STREQUAL test)

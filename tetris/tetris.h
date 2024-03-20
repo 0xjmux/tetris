@@ -122,7 +122,7 @@ typedef struct TetrisGame {
 
 TetrisGame* create_game(void);
 void end_game(TetrisGame *tg);
-void tg_tick(TetrisGame *tg, enum player_move move);
+bool tg_tick(TetrisGame *tg, enum player_move move);
 
 bool check_valid_move(TetrisGame *tg, uint8_t player_move);
 
@@ -141,8 +141,10 @@ bool check_filled_row(TetrisGame *tg, uint8_t row);
 bool check_and_spawn_new_piece(TetrisGame *tg);
 void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows);
 
+bool check_game_over(TetrisGame *tg);
 
 int32_t get_elapsed_us(struct timeval before, struct timeval after);
-int16_t smallest_in_arr(int16_t arr[], const size_t arr_size);
+int16_t smallest_in_arr(int16_t arr[], const uint8_t arr_size);
+void int16_to_uint8_arr(int16_t *in_arr, uint8_t *out_arr, uint8_t arr_size);
 
 #endif

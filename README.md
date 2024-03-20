@@ -5,11 +5,14 @@ This game engine is part of a larger project where I'm implementing a version of
 The game was branched off to it's own repository because the embedded project source tree only needs `tetris.h` and `tetris.c`, but all the other driver and testing files take up a decent amount of space - so while i'm developing it, it'll live here. 
 
 ### TODO:
-* Finish tetris game logic
+* [ ] Finish tetris game logic
 * [X] Set up CI/CD with GH actions
-* fix gameover state not detected
-* fix full lines not being removed
-* fix duplicate colors
+* [ ] fix gameover state not detected
+* [ ] fix full lines not being removed
+* [ ] fix duplicate colors
+* [ ] fix crash on trying to clear line
+* figure out what's causing a bunch of out-of-bounds numbers to show up in row 1 of board
+
 
 
 ### Project Goals

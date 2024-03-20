@@ -1,3 +1,6 @@
 [submodule "extern/Unity"]
 	path = extern/Unity
 	url = git@github.com:ThrowTheSwitch/Unity.git
+[submodule "extern/inih"]
+	path = extern/inih
+	url = git@github.com:benhoyt/inih.git

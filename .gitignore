@@ -23,6 +23,11 @@ a.out
 *.a
 
 
+# debugging files
+gdb*
+*.ini
+*.log
+
 # cpp check
 *cppcheck-build-dir
 *.cppcheck

@@ -13,6 +13,8 @@
 #include <assert.h>
 #include <ncurses.h>
 
+#include "ini.h"
+
 #include "tetris.h"
 #include "display.h"
 
@@ -45,7 +47,6 @@ void update_score(WINDOW *w, TetrisGame *tg);
 void print_keypress(enum player_move move);
 
 void sleep_millis(uint16_t millis);
-void print_board_state(TetrisBoard tb);
 
 // void refresh_debug_var_window(WINDOW *w, enum player_move move);
 void refresh_debug_var_window(WINDOW *w);

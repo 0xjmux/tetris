@@ -13,5 +13,13 @@ target_include_directories(tetris_driver PUBLIC ${PROJECT_SOURCE_DIR}/include)
 # message("building driver with proj source dir ${PROJECT_SOURCE_DIR}")
 
 find_library(NCURSES_FOUND ncurses REQUIRED)
-target_link_libraries(tetris_driver ncurses tetris)
+
+# find ini library (needed for saving game state to disk)
+OPTION(INI_LIB_INCLUDE_OPTION "Include inih library for saving game state to disk" ON)
+IF(INI_LIB_INCLUDE_OPTION)
+    # find_library(INIH_FOUND ${PROJECT_SOURCE_DIR}/extern/inih/ini.c REQUIRED)
+    target_link_libraries(tetris_driver ncurses tetris ini)
+ELSE()
+    target_link_libraries(tetris_driver ncurses tetris)
+ENDIF()
 

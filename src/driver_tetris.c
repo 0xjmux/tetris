@@ -74,22 +74,18 @@ int main(void) {
     fprintf(gamelog, "========================================\n");
     fflush(gamelog);
     #endif
+    bool gamestate = true;
 
     // while game is running and player hasn't tried to quit
     while (!tg->game_over && move != T_QUIT) {
 
 
-        tg_tick(tg, move);
+        gamestate = tg_tick(tg, move);
+        // IMPLEMENT WHAT HAPPENS ON GAME OVER!!
 
         // display board
         display_board(g_win, &tg->active_board);
         update_score(s_win, tg);
-
-
-// TWO ISSUES 4:30PM 3/17:
-// gravity tick not working
-// board update without move not working
-        
 
         switch(getch()) {
             case KEY_UP:
@@ -109,6 +105,19 @@ int main(void) {
                 break;
             case 'q':
                 move = T_QUIT;
+                break;
+            // save game to disk
+            case 'p':
+                move = T_NONE;
+                save_game_state(tg);
+                mvwprintw(s_win, 4,1, "GAME STATE SAVED\n");
+                fprintf(gamelog, "game state saved to file gamestate.ini\n");
+                wnoutrefresh(s_win);
+                 
+                break;
+            // load game from disk
+            case 'l':
+                move = T_NONE;
                 break;
             default:
                 move = T_NONE;
@@ -167,7 +176,7 @@ void display_board(WINDOW *w, TetrisBoard *tb) {
         wrefresh(w);
         #ifdef DEBUG_T
         fprintf(gamelog, "display_board()\n");
-        // print_board_state(*tb);
+        // print_board_state(*tb, NULL);
         fflush(gamelog);
         #endif
 
@@ -184,13 +193,8 @@ void display_board(WINDOW *w, TetrisBoard *tb) {
         // fprintf(gamelog, "last update timer: %ld ; curr_time = %ld, last_update=%ld\n", \
         //  curr_time_usec.tv_usec - last_update.tv_usec, curr_time_usec.tv_usec, last_update.tv_usec);
         // #endif
-
     // }
-    if (curr_time_usec.tv_sec - last_update.tv_sec > 1) {
-
-    }
-
-}
+ }
 
 
 // void draw_piece(WINDOW *w, TetrisBoard *tb)
@@ -239,8 +243,10 @@ void refresh_debug_var_window(WINDOW *w) {
     wmove(w, 1, 1);
     TetrisPiece tp = tg->active_piece;
     char const* piece_str[] =  {"S_PIECE", "Z_PIECE", "T_PIECE", "L_PIECE", "J_PIECE", "SQ_PIECE", "I_PIECE"};
+    /*
     char const* move_str[] =  {"T_NONE", "T_UP", "T_DOWN", "T_LEFT", \
     "T_RIGHT", "T_PLAYPAUSE", "T_QUIT"};
+    */
 
     mvwprintw(w, 1,1, "DEBUG INFO:\n");
     // mvwprintw(w, 2,1, "Current move: %s\n", move_str[move]);
@@ -256,34 +262,3 @@ void refresh_debug_var_window(WINDOW *w) {
 }
 
 
-
-/**
- * Print current board state to console
- * (duplicate from tetris_test_helpers)
-*/
-void print_board_state(TetrisBoard tb) {
-    // draw existing pieces on board
-    fprintf(gamelog, "Highest occupied cell: %d\n   ", tb.highest_occupied_cell);
-    fprintf(gamelog, "  ");
-    for (int i = 0; i < TETRIS_COLS; i++) 
-        fprintf(gamelog, "%-2d  ",i);
-    fprintf(gamelog, "\n   ");
-
-    for (int i = 0; i < TETRIS_COLS; i++) 
-        fprintf(gamelog, "----");
-    fprintf(gamelog, "----\n");
-
-    for (int i = 0; i < TETRIS_ROWS; i++) {
-        fprintf(gamelog, "%-3d| ", i);
-        for (int j = 0; j < TETRIS_COLS; j++) {
-            if (tb.board[i][j] >= 0) {
-                fprintf(gamelog, "%-3d ", tb.board[i][j]);
-            }
-            else {
-                fprintf(gamelog, "    ");
-            }
-        }
-        fprintf(gamelog, "|\n");
-    }
-    fflush(gamelog);
-}
