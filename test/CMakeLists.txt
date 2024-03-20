@@ -7,7 +7,11 @@ add_executable(test_tetris
     tetris_test_helpers.c
 )
 
-target_compile_definitions(test_tetris PUBLIC TETRIS_UNIT_TEST_DEF=1)
+OPTION(TETRIS_UNIT_TEST_MACRO "Print gamelog to stdout (for CI)" OFF) # disabled by default
+IF(TETRIS_UNIT_TEST_MACRO)
+    target_compile_definitions(test_tetris PUBLIC TETRIS_UNIT_TEST_DEF=1)
+ENDIF(TETRIS_UNIT_TEST_MACRO)
+
 target_link_libraries(test_tetris
     tetris
     Unity

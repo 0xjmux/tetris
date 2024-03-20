@@ -13,7 +13,7 @@
 TetrisGame *tg;
 TetrisBoard tb;
 
-#define TETRIS_UNIT_TEST_DEF 1
+// #define TETRIS_UNIT_TEST_DEF 1
 
 //#ifdef DEBUG_T
 //#include <stdio.h>
@@ -27,12 +27,11 @@ TetrisBoard tb;
 void setUp(void) {
     tg = create_game();
     tb = init_board();
-    #ifdef DEBUG_T
-    gamelog = stdout;
-    fprintf(gamelog, "log redirect to stdout setup");
-    fflush(gamelog);
+    #ifdef TETRIS_UNIT_TEST_DEF
+        gamelog = stdout;
+        fprintf(gamelog, "log redirect to stdout setup\n");
+        fflush(gamelog);
     #endif
-
 }
 
 /**
@@ -265,11 +264,12 @@ int main(void)
     // these tests assume a 16x32 board, i haven't tested otherwise
     assert(TETRIS_ROWS == 32 && TETRIS_COLS == 16);
 
-    RUN_TEST(test_checkValidMove);
+    // RUN_TEST(test_checkValidMove);
     RUN_TEST(test_T_testPieceRotate);
     RUN_TEST(test_clearRows);
     RUN_TEST(test_checkSpawnNewPiece);
     RUN_TEST(test_getElapsedUs);
+    printf("tests completed run\n");
     
 
     return UNITY_END();

@@ -77,7 +77,9 @@ TetrisGame* create_game(void) {
 void end_game(TetrisGame *tg) {
     #ifdef DEBUG_T
     fprintf(gamelog, "Deallocating tetris game\n");
-    fclose(gamelog);
+        #ifndef TETRIS_UNIT_TEST_DEF
+        fclose(gamelog);
+        #endif
     #endif
 
 
@@ -577,6 +579,8 @@ bool check_game_over(TetrisGame *tg) {
     // the board highest maxes out at 2 and it doesn't detect the 
     // game over condition. it keeps adding pieces on top of each other, 
     // whcih is a mess.
+
+    return false;
 
 }
 

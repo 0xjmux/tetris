@@ -179,3 +179,15 @@ bool check_for_occ_cells_in_row(TetrisGame *tg, uint8_t row) {
     return false;
 }
 
+
+
+/**
+ * POSIX sleep for `millis` milliseconds
+*/
+// `man 2 nanosleep`
+void sleep_millis(uint16_t millis) {
+    struct timespec ts;
+    ts.tv_sec = 0;
+    ts.tv_nsec = millis * 1000; // * 1000;
+    nanosleep(&ts, NULL);
+}
