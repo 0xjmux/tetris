@@ -118,6 +118,7 @@ int main(void) {
             // load game from disk
             case 'l':
                 move = T_NONE;
+                // IMPLEMENT
                 break;
             default:
                 move = T_NONE;
@@ -227,8 +228,8 @@ void print_keypress(enum player_move move) {
 
 /**
  * POSIX sleep for `millis` milliseconds
+ * `man 2 nanosleep`
 */
-// `man 2 nanosleep`
 void sleep_millis(uint16_t millis) {
     struct timespec ts;
     ts.tv_sec = 0;

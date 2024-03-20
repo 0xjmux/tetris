@@ -470,9 +470,7 @@ bool check_do_piece_gravity(TetrisGame *tg) {
 void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows) {
     // starting at `row`, go up until you reach cell with value -1 
     // or the top of the board
-    //assert(num_rows <= 4 && top_row < TETRIS_ROWS);
-    assert(num_rows <= 4);
-    assert(top_row < TETRIS_ROWS);
+    assert(num_rows <= 4 && top_row < TETRIS_ROWS);
 
     //  for each col on the board
     for (int col = 0; col < TETRIS_COLS; col++) {

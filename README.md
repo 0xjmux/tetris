@@ -11,8 +11,11 @@ The game was branched off to it's own repository because the embedded project so
 * [ ] fix full lines not being removed
 * [ ] fix duplicate colors
 * [ ] fix crash on trying to clear line
-* figure out what's causing a bunch of out-of-bounds numbers to show up in row 1 of board
+* [ ] figure out what's causing a bunch of out-of-bounds numbers to show up in row 1 of board - i think this is a type issue with uint & int types!
 
+
+> [!WARNING]
+> This project is still in active development, bugs are still being found. When this is no longer the case, this notice will be removed. 
 
 
 ### Project Goals

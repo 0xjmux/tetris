@@ -225,8 +225,6 @@ void test_checkSpawnNewPiece(void) {
     tg->last_gravity_tick_usec.tv_sec -= 1;
     tg->last_gravity_tick_usec.tv_usec -= 100;
 
-    // printf("last_grav_tick: %d:%d, tick_rate: %d\n", tg->last_gravity_tick_usec.tv_sec, \
-    // tg->last_gravity_tick_usec.tv_usec, tg->gravity_tick_rate_usec);
 
     // do gravity should fail since we're at bottom, and 
     //  should change active_piece.falling to false
