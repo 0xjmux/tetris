@@ -109,7 +109,7 @@ int main(void) {
             // save game to disk
             case 'p':
                 move = T_NONE;
-                save_game_state(tg);
+                save_game_state(tg, "gamestate.ini");
                 mvwprintw(s_win, 4,1, "GAME STATE SAVED\n");
                 fprintf(gamelog, "game state saved to file gamestate.ini\n");
                 wnoutrefresh(s_win);
@@ -130,12 +130,18 @@ int main(void) {
         if (move != T_NONE) print_keypress(move);
         #endif
     }
+    #ifdef DEBUG_T
+    // for debugging, save state when game exits
+    save_game_state(tg, "final-gamestate.ini");
+    #endif
+
+    printf("Game over! Level=%d, Score=%d\n", tg->level, tg->score);
+
+    // TODO ask player if they want to play again
+
 
     // if we're here, game is over; dealloc tg
     end_game(tg);
-        
-    // TODO ask player if they want to play again
-
 
     endwin();
 
@@ -177,7 +183,7 @@ void display_board(WINDOW *w, TetrisBoard *tb) {
         wrefresh(w);
         #ifdef DEBUG_T
         fprintf(gamelog, "display_board()\n");
-        print_board_state(*tb, gamelog);
+        // print_board_state(*tb, gamelog);
         fflush(gamelog);
         #endif
 

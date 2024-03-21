@@ -31,9 +31,9 @@ void nc_init_colors(WINDOW *w) {
  * This function helps with debugging edge cases. 
  * Will save the board to a file `gamestate.ini` 
 */
-void save_game_state(TetrisGame *tg) {
+void save_game_state(TetrisGame *tg, const char* filename) {
         FILE *savefile;
-        savefile = fopen("gamestate.ini", "w+");
+        savefile = fopen(filename, "w+");
 
 
         // pretty-print board state to file for ease of differentiation

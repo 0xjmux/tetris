@@ -16,6 +16,11 @@ IF(TETRIS_UNIT_TEST_MACRO)
     target_compile_definitions(test_tetris PUBLIC TETRIS_UNIT_TEST_DEF=1)
 ENDIF(TETRIS_UNIT_TEST_MACRO)
 
+OPTION(TETRIS_UNIT_TEST_CI "CI-specific path options" OFF) # disabled by default
+IF(TETRIS_UNIT_TEST_CI)
+    target_compile_definitions(test_tetris PUBLIC TETRIS_UNIT_TEST_CI=1)
+ENDIF(TETRIS_UNIT_TEST_CI)
+
 target_link_libraries(test_tetris
     tetris
     Unity

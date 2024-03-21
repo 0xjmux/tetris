@@ -98,7 +98,7 @@ bool tg_tick(TetrisGame *tg, enum player_move move) {
 
 
     check_do_piece_gravity(tg);
-    check_and_spawn_new_piece(tg);
+    check_and_spawn_new_piece(tg);      // includes row clearing and score updates
     render_active_board(tg);
     if (check_game_over(tg)) {        // not fully implemented yet
         fprintf(gamelog, "game over detected, returning false from tg_tick\n");
@@ -227,8 +227,8 @@ void tg_update_score(TetrisGame *tg, uint8_t lines_cleared) {
 
     #ifdef DEBUG_T
     fprintf(gamelog, "Score updated for %d lines cleared. Score = %d, Level = %d \
-    Lines cleared since last level=%d", lines_cleared, tg->score, tg->level, 
-    lines_cleared_since_last_level);
+Lines cleared since last level=%d - highest_row=%d\n", lines_cleared, tg->score, tg->level, 
+    lines_cleared_since_last_level, tg->board.highest_occupied_cell);
     fflush(gamelog);
     #endif
 
@@ -296,15 +296,11 @@ bool check_valid_move(TetrisGame *tg, uint8_t player_move){
 
         case T_UP:
             #ifdef DEBUG_T
-                fprintf(gamelog, "rotate move should not be called from check_valid_move()!");
-                fflush(gamelog);
                 fprintf(gamelog, "player_move=%d \n", player_move);
+                fflush(gamelog);
             #endif
             assert(false && "rotate move should not be passed to check_valid_move()!");
-
             break;
-
-
 
         case T_DOWN:
             const tetris_location down_offset = {.row = 1, .col = 0};
@@ -469,6 +465,7 @@ bool check_filled_row(TetrisGame *tg, const uint8_t row) {
  * @param top_row top row of the rows being cleared
  * @param num_rows number of rows to clear
 */
+
 void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows) {
     // starting at `row`, go up until you reach cell with value -1 
     // or the top of the board
@@ -515,7 +512,7 @@ uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells) {
         row_with_offset = (uint8_t) tp_cells[i].row;
 
         assert(row_with_offset < TETRIS_ROWS && row_with_offset > -1 && "global row out of bounds");
-        fprintf(gamelog, "check_and_clear: checking row %d\n", i);
+        fprintf(gamelog, "check_and_clear: checking row %d\n", row_with_offset);
 
         // if row is full, add it to list of rows to clear
         if(check_filled_row(tg, row_with_offset)) {
@@ -591,7 +588,10 @@ bool check_and_spawn_new_piece(TetrisGame *tg) {
     }
 
     // check for filled rows and clear them
-    check_and_clear_rows(tg, tp_cells);
+    uint8_t cleared_rows = check_and_clear_rows(tg, tp_cells);
+    if (cleared_rows > 0)
+        tg_update_score(tg, cleared_rows);
+
 
     // NOW, WE SPAWN NEW PIECE
     create_rand_piece(tg);
