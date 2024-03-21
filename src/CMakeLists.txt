@@ -8,11 +8,18 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 add_executable(tetris_driver
     driver_tetris.c 
     display.c
+    utils.c
 )
 target_include_directories(tetris_driver PUBLIC ${PROJECT_SOURCE_DIR}/include)
 # message("building driver with proj source dir ${PROJECT_SOURCE_DIR}")
 
 find_library(NCURSES_FOUND ncurses REQUIRED)
+
+OPTION(DEBUG_WINDOW "Enable window with game state information for debugging" ON)
+IF(DEBUG_WINDOW)
+    target_compile_definitions(tetris_driver PUBLIC DEBUG_T_WIN=1)
+ENDIF()
+
 
 # find ini library (needed for saving game state to disk)
 OPTION(INI_LIB_INCLUDE_OPTION "Include inih library for saving game state to disk" ON)

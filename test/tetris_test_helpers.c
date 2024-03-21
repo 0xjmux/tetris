@@ -61,34 +61,7 @@ void fill_board_rectangle(TetrisBoard *tb, int8_t tL_row, int8_t tL_col, \
     #endif
 }
 
-/**
- * Print current board state to console
-*/
-void print_board_state(TetrisBoard tb) {
-    // draw existing pieces on board
-    printf("Highest occupied cell: %d\n   ", tb.highest_occupied_cell);
-    printf("  ");
-    for (int i = 0; i < TETRIS_COLS; i++) 
-        printf("%-2d  ",i);
-    printf("\n   ");
 
-    for (int i = 0; i < TETRIS_COLS; i++) 
-        printf("----");
-    printf("----\n");
-
-    for (int i = 0; i < TETRIS_ROWS; i++) {
-        printf("%-3d| ", i);
-        for (int j = 0; j < TETRIS_COLS; j++) {
-            if (tb.board[i][j] >= 0) {
-                printf("%-3d ", tb.board[i][j]);
-            }
-            else {
-                printf("    ");
-            }
-        }
-        printf("|\n");
-    }
-}
 
 /**
  * Setup conditions for testing check_valid_move
@@ -112,7 +85,7 @@ void setup_moveCheck(TetrisGame *tg, uint8_t gen_height, \
     //  to see the game state being tested
     TetrisBoard render_board = render_active_board(tg);
     printf("Test case: %d\n", *test_state);
-    print_board_state(render_board);
+    print_board_state(render_board, stdout);
     *test_state += 1;
 
 
@@ -177,17 +150,4 @@ bool check_for_occ_cells_in_row(TetrisGame *tg, uint8_t row) {
     }
 
     return false;
-}
-
-
-
-/**
- * POSIX sleep for `millis` milliseconds
-*/
-// `man 2 nanosleep`
-void sleep_millis(uint16_t millis) {
-    struct timespec ts;
-    ts.tv_sec = 0;
-    ts.tv_nsec = millis * 1000; // * 1000;
-    nanosleep(&ts, NULL);
 }

@@ -11,10 +11,11 @@
 
 #include "driver_tetris.h"
 #include "display.h"
+#include "utils.h"
 #include "tetris.h"
 
 // show extra window with debugging information
-#define DEBUG_T_WIN 1
+// #define DEBUG_T_WIN 1
 #ifdef DEBUG_T_WIN
 WINDOW *dbg_win;
 #endif
@@ -74,13 +75,12 @@ int main(void) {
     fprintf(gamelog, "========================================\n");
     fflush(gamelog);
     #endif
-    bool gamestate = true;
 
     // while game is running and player hasn't tried to quit
     while (!tg->game_over && move != T_QUIT) {
 
 
-        gamestate = tg_tick(tg, move);
+        tg_tick(tg, move);
         // IMPLEMENT WHAT HAPPENS ON GAME OVER!!
 
         // display board
@@ -177,7 +177,7 @@ void display_board(WINDOW *w, TetrisBoard *tb) {
         wrefresh(w);
         #ifdef DEBUG_T
         fprintf(gamelog, "display_board()\n");
-        // print_board_state(*tb, NULL);
+        print_board_state(*tb, gamelog);
         fflush(gamelog);
         #endif
 
@@ -226,16 +226,6 @@ void print_keypress(enum player_move move) {
 
 }
 
-/**
- * POSIX sleep for `millis` milliseconds
- * `man 2 nanosleep`
-*/
-void sleep_millis(uint16_t millis) {
-    struct timespec ts;
-    ts.tv_sec = 0;
-    ts.tv_nsec = millis * 1000; // * 1000;
-    nanosleep(&ts, NULL);
-}
 
 
 void refresh_debug_var_window(WINDOW *w) {

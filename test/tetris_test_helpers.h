@@ -2,10 +2,11 @@
 #define TETRIS_TEST_HELPERS_H
 
 #include "tetris.h"
+#include "utils.h"
+
 #include <time.h>
 
 void add_incomplete_line_to_board(TetrisBoard *tb, uint8_t row);
-void print_board_state(TetrisBoard tb);
 void setup_N_lines_board(TetrisBoard *tb, uint8_t N);
 
 // void setup_moveCheck(TetrisGame *tg, uint8_t gen_height, TetrisPiece testpiece);
@@ -20,7 +21,6 @@ bool check_for_occ_cells_in_row(TetrisGame *tg, uint8_t row);
 void print_all_tetrominos(void);
 void print_piece(const tetris_location t[4][4]);
 
-void sleep_millis(uint16_t millis);
 
 
 

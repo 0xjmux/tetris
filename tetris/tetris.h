@@ -7,6 +7,8 @@
 #ifndef TETRIS_GAME_H
 #define TETRIS_GAME_H
 
+
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -126,7 +128,6 @@ bool tg_tick(TetrisGame *tg, enum player_move move);
 
 bool check_valid_move(TetrisGame *tg, uint8_t player_move);
 
-
 TetrisBoard render_active_board(TetrisGame *tg);
 TetrisPiece create_rand_piece(TetrisGame *tg);
 TetrisPiece create_tetris_piece(enum piece_type ptype, int16_t row, int16_t col, uint8_t orientation);
@@ -137,14 +138,18 @@ bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp);
 
 bool check_do_piece_gravity(TetrisGame *tg);
 
-bool check_filled_row(TetrisGame *tg, uint8_t row);
-bool check_and_spawn_new_piece(TetrisGame *tg);
 void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows);
+bool check_filled_row(TetrisGame *tg, uint8_t row);
+uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells);
+
+bool check_and_spawn_new_piece(TetrisGame *tg);
 
 bool check_game_over(TetrisGame *tg);
 
+// helper functions
 int32_t get_elapsed_us(struct timeval before, struct timeval after);
 int16_t smallest_in_arr(int16_t arr[], const uint8_t arr_size);
 void int16_to_uint8_arr(int16_t *in_arr, uint8_t *out_arr, uint8_t arr_size);
+void uint8_to_int16_arr(uint8_t *in_arr, int16_t *out_arr, uint8_t arr_size);
 
 #endif

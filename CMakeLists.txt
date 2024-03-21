@@ -76,6 +76,7 @@ if(TARGET_GROUP STREQUAL production)
   include_directories(include)
   add_subdirectory(src)
 elseif(TARGET_GROUP STREQUAL test)
+  enable_testing()
   include(CTest)
 
   add_subdirectory(extern)

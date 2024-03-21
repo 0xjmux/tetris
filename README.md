@@ -8,10 +8,11 @@ The game was branched off to it's own repository because the embedded project so
 * [ ] Finish tetris game logic
 * [X] Set up CI/CD with GH actions
 * [ ] fix gameover state not detected
-* [ ] fix full lines not being removed
+* [X] fix full lines not being removed
 * [ ] fix duplicate colors
 * [ ] fix crash on trying to clear line
 * [ ] figure out what's causing a bunch of out-of-bounds numbers to show up in row 1 of board - i think this is a type issue with uint & int types!
+* [ ] fix J piece rotation
 
 
 > [!WARNING]

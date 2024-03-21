@@ -46,7 +46,6 @@ void update_score(WINDOW *w, TetrisGame *tg);
 // Debug functions
 void print_keypress(enum player_move move);
 
-void sleep_millis(uint16_t millis);
 
 // void refresh_debug_var_window(WINDOW *w, enum player_move move);
 void refresh_debug_var_window(WINDOW *w);

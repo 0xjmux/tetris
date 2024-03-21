@@ -4,6 +4,7 @@
 
 #include "display.h"
 #include "tetris.h"
+#include "utils.h"
 
 
 /**
@@ -41,12 +42,8 @@ void save_game_state(TetrisGame *tg) {
 
         // save TetrisGame state
         fprintf(savefile, "\n\n[TETRIS_GAME_STRUCT]\n");
-        fprintf(savefile, "active_board = ");
-        save_board_to_file(savefile, tg->active_board);
-        fprintf(savefile, "active_board.highest_occupied_cell = %d\n", tg->active_board.highest_occupied_cell);
-        fprintf(savefile, "\nboard = ");
-        save_board_to_file(savefile, tg->board);
-        fprintf(savefile, "board.highest_occupied_cell = %d\n", tg->board.highest_occupied_cell);
+        fprintf(savefile, "active_board_highest_occupied_cell = %d\n", tg->active_board.highest_occupied_cell);
+        fprintf(savefile, "board_highest_occupied_cell = %d\n", tg->board.highest_occupied_cell);
         fprintf(savefile, "\n");
         fflush(savefile);
 
@@ -54,7 +51,7 @@ void save_game_state(TetrisGame *tg) {
         fprintf(savefile, "score = %d\n", tg->score);
         fprintf(savefile, "level = %d\n", tg->level);
         fprintf(savefile, "gravity_tick_rate_usec = %d\n", tg->gravity_tick_rate_usec);
-        fprintf(savefile, "last_gravity_tick_usec = {%ld,%ld}\n", tg->last_gravity_tick_usec.tv_sec, tg->last_gravity_tick_usec.tv_usec);
+        fprintf(savefile, "last_gravity_tick_usec = %ld,%ld\n", tg->last_gravity_tick_usec.tv_sec, tg->last_gravity_tick_usec.tv_usec);
 
         
         fprintf(savefile, "\n[ACTIVE_PIECE]\n");
@@ -64,85 +61,38 @@ void save_game_state(TetrisGame *tg) {
         fprintf(savefile, "orientation = %d\n", tg->active_piece.orientation);
         fprintf(savefile, "falling = %d\n", tg->active_piece.falling);
 
-        printf("game state saved!\n");
+
+        fprintf(savefile, "\n[active_board]\n");
+        ini_save_board_to_file(savefile, tg->active_board);
+
+        fprintf(savefile, "\n[board]\n");
+        ini_save_board_to_file(savefile, tg->board);
+
+        printf("\ngame state saved!\n");
 
         fclose(savefile);
 
 }
 
-/**
- * Print current board state to console
- * @param TetrisBoard
- * @param *file to print to - NULL for default
-*/
-void print_board_state(TetrisBoard tb, FILE *file) {
-    if (file == NULL) 
-        file = gamelog;
-    // draw existing pieces on board
-    fprintf(file, "Highest occupied cell: %d\n   ", tb.highest_occupied_cell);
-    fprintf(file, "  ");
-    for (int i = 0; i < TETRIS_COLS; i++) 
-        fprintf(file, "%-2d  ",i);
-    fprintf(file, "\n   ");
-
-    for (int i = 0; i < TETRIS_COLS; i++) 
-        fprintf(file, "----");
-    fprintf(file, "----\n");
-
-    for (int i = 0; i < TETRIS_ROWS; i++) {
-        fprintf(file, "%-3d| ", i);
-        for (int j = 0; j < TETRIS_COLS; j++) {
-            if (tb.board[i][j] >= 0) {
-                fprintf(file, "%-3d ", tb.board[i][j]);
-            }
-            else {
-                fprintf(file, "    ");
-            }
-        }
-        fprintf(file, "|\n");
-    }
-    fflush(file);
-}
 
 
 /**
- * Handler for reading .ini file
+ * Save board to ini file in easier to read format. 
+ * Each board will have its own section to make this less painful
 */
-// static int handler(void* user, const char* section, const char* name,
-//                    const char* value)
-// {
-//     TetrisGame *tg = (TetrisGame*)user;
-
-//     #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
-//     if (MATCH("protocol", "version")) {
-//         pconfig->version = atoi(value);
-//     } else if (MATCH("user", "name")) {
-//         pconfig->name = strdup(value);
-//     } else if (MATCH("user", "email")) {
-//         pconfig->email = strdup(value);
-//     } else {
-//         return 0;  /* unknown section/name, error */
-//     }
-//     return 1;
-// }
-
-
-
-void save_board_to_file(FILE *file, TetrisBoard tb) {
-    fprintf(file, "{");
+void ini_save_board_to_file(FILE *file, TetrisBoard tb) {
 
     for (int i = 0; i < TETRIS_ROWS; i++) {
         // fprintf(file, "%-3d| ", i);
-        fprintf(file, "{");
+        fprintf(file, "row_%d = ", i);
         for (int j = 0; j < TETRIS_COLS - 1; j++) {
             fprintf(file, "%d,", tb.board[i][j]);
         }
-        fprintf(file, "%d}", tb.board[i][TETRIS_COLS - 1]);
+        fprintf(file, "%d\n", tb.board[i][TETRIS_COLS - 1]);
         
-        // dont print comma on last row
-        if (i < TETRIS_ROWS - 1)
-            fprintf(file,", ");
     }
-    fprintf(file, "}\n");
+    // fprintf(file, "}\n");
     fflush(file);
 }
+
+

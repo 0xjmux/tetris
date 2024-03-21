@@ -25,8 +25,12 @@ a.out
 
 # debugging files
 gdb*
-*.ini
+gamestate.ini
 *.log
+debug-cores/
+
+
+suite_2.c
 
 # cpp check
 *cppcheck-build-dir

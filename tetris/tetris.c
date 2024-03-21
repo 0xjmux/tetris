@@ -99,9 +99,11 @@ bool tg_tick(TetrisGame *tg, enum player_move move) {
 
     check_do_piece_gravity(tg);
     check_and_spawn_new_piece(tg);
-    if (! check_game_over(tg))         // not fully implemented yet
-        return false;
     render_active_board(tg);
+    if (check_game_over(tg)) {        // not fully implemented yet
+        fprintf(gamelog, "game over detected, returning false from tg_tick\n");
+        return false;
+    }
 
  
 
@@ -397,20 +399,6 @@ bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp) {
 }
 
 
-/**
- * On placing a piece down, the rows where it landed 
- * need to be checked to see if they're full so they can
- * be cleared and the score can be increased
-*/
-bool check_filled_row(TetrisGame *tg, const uint8_t row) {
-    
-    for (int c = 0; c < TETRIS_COLS; c++) {
-        if(tg->board.board[row][c] == -1)
-            return false;
-    }
-    return true;
-}
-
 
 /** 
  * Check if piece needs to be dropped down by comparing game 
@@ -460,6 +448,20 @@ bool check_do_piece_gravity(TetrisGame *tg) {
 
 
 /**
+ * On placing a piece down, the rows where it landed 
+ * need to be checked to see if they're full so they can
+ * be cleared and the score can be increased
+*/
+bool check_filled_row(TetrisGame *tg, const uint8_t row) {
+    
+    for (int c = 0; c < TETRIS_COLS; c++) {
+        if(tg->board.board[row][c] == -1)
+            return false;
+    }
+    return true;
+}
+
+/**
  * Clear row `row` and move all cells above it down one; 
  * filling in now empty spots with BG_COLOR
  * this function assumes `row` has already been checked to be filled
@@ -489,6 +491,71 @@ void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows) {
 
 
 /**
+ * When a piece lands, check the rows where it landed for filled rows and 
+ * clear them
+ * @param TetrisGame
+ * @param tp_cells location on board of all 4 cells in piece
+ * @returns number of cleared rows
+*/
+uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells) {
+
+    /* some slight duplicate work here but implementation of 
+     * not doing dupliate work was complex enough that this is prob better.
+     * 
+     * in short, this only checks rows where piece ended up, but will 
+     * check all 4 rows; which might mean checking the same row twice
+    */ 
+    uint8_t rows_to_clear[4];
+    uint8_t rows_idx = 0;       // index (and therefore size) of rows_to_clear
+    uint8_t row_with_offset;
+    uint8_t piece_max_row = TETRIS_ROWS;
+    for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
+        // I THINK SOMETHING IS WRONG SOMEWHERE HERE
+
+        row_with_offset = (uint8_t) tp_cells[i].row;
+
+        assert(row_with_offset < TETRIS_ROWS && row_with_offset > -1 && "global row out of bounds");
+        fprintf(gamelog, "check_and_clear: checking row %d\n", i);
+
+        // if row is full, add it to list of rows to clear
+        if(check_filled_row(tg, row_with_offset)) {
+            rows_to_clear[rows_idx] = row_with_offset;
+            rows_idx += 1;
+        }
+
+        // test each piece location to see if this cell is the new highest occupied cell
+        if (row_with_offset < piece_max_row) {
+            piece_max_row = row_with_offset;
+        }
+    }
+
+    // update highest occupied cell based on this piece
+    assert(piece_max_row > -1 && piece_max_row < TETRIS_ROWS && "new tallest cell out of bounds");
+
+    if (piece_max_row <  tg->board.highest_occupied_cell)
+        tg->board.highest_occupied_cell = piece_max_row;
+
+    // if we have rows to clear:
+    if (rows_idx > 0) {
+        // convert rows_to_clear to int16 to prevent issues
+        int16_t rows_to_clear_int16[4];
+        uint8_to_int16_arr(rows_to_clear, rows_to_clear_int16, rows_idx );
+        // find top row in rows_to_clear and clear rows
+        uint8_t top_row = (uint8_t) smallest_in_arr(rows_to_clear_int16, rows_idx);
+        #ifdef DEBUG_T
+            fprintf(gamelog, "clearing %d rows with top_row=%d\n", rows_idx, top_row);
+            fflush(gamelog);
+        #endif
+
+        clear_rows(tg, top_row, rows_idx);
+    }
+
+    return rows_idx;
+
+}
+
+
+/**
  * Check board piece to see if still falling. If it's stopped
  * falling, then add it to the board, and spawn a new rand piece
  * @returns true when new piece spawned, false otherwise
@@ -496,8 +563,7 @@ void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows) {
 */
 bool check_and_spawn_new_piece(TetrisGame *tg) {
 
-    // if the piece is still falling, it hasn't landed yet; 
-    //  we do nothing
+    // if the piece is still falling, we do nothing
     if (tg->active_piece.falling)
         return false;
 
@@ -509,7 +575,7 @@ bool check_and_spawn_new_piece(TetrisGame *tg) {
     #endif
 
     // set up active piece and array of offsets from current loc
-    tetris_location tp_cells[NUM_CELLS_IN_TETROMINO];
+    tetris_location tp_cells[NUM_CELLS_IN_TETROMINO];       // board location of all 4 cells in piece
     for (int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
         tp_cells[i] = TETROMINOS[tp.ptype][tp.orientation][i];
         // put global piece locations in tp_cells
@@ -524,56 +590,16 @@ bool check_and_spawn_new_piece(TetrisGame *tg) {
         tg->board.board[tp_cells[i].row][tp_cells[i].col] = tp.ptype;
     }
 
-
-
-    /* some slight duplicate work here but implementation of 
-     * not doing dupliate work was complex enough that this is prob better.
-     * 
-     * in short, this only checks rows where piece ended up, but will 
-     * check all 4 rows; which might mean checking the same row twice
-    */ 
-    uint8_t rows_to_clear[4];
-    uint8_t rows_idx = 0;
-    uint8_t row_with_offset;
-    uint8_t new_max_row = TETRIS_ROWS;
-    for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
-        row_with_offset = tp_cells[i].row;
-
-        assert(row_with_offset < TETRIS_ROWS && row_with_offset > -1 && "global row out of bounds");
-
-        // if row is full, add it to list of rows to clear
-        if(check_filled_row(tg, row_with_offset)) {
-            rows_to_clear[rows_idx] = row_with_offset;
-            rows_idx += 1;
-        }
-
-        // test each piece location to see if this cell is the new highest occupied cell
-        if (row_with_offset < new_max_row) {
-            new_max_row = row_with_offset;
-        }
-    }
-
-    // update highest occupied cell based on this piece
-    assert(new_max_row > -1 && new_max_row < TETRIS_ROWS && "new tallest cell out of bounds");
-    tg->board.highest_occupied_cell = new_max_row;
-
-    // if we have rows to clear:
-    if (rows_idx > 0) {
-        // find top row in rows_to_clear and clear rows
-        uint8_t top_row = (uint8_t) smallest_in_arr(rows_to_clear, rows_idx + 1);
-        #ifdef DEBUG_T
-            fprintf(gamelog, "clearing %d rows with top_row=%d\n", rows_idx + 1, top_row);
-            fflush(gamelog);
-        #endif
-
-        clear_rows(tg, top_row, rows_idx + 1);
-    }
+    // check for filled rows and clear them
+    check_and_clear_rows(tg, tp_cells);
 
     // NOW, WE SPAWN NEW PIECE
     create_rand_piece(tg);
 
     return true;
 }
+
+
 
 
 /**
@@ -592,8 +618,10 @@ bool check_game_over(TetrisGame *tg) {
     // NOT FINISHED BEING IMPL YET
 
     // if we get to 1 as a highest occupied cell, stop
-    if (tg->board.highest_occupied_cell == 1)
+    if (tg->board.highest_occupied_cell == 1) {
+        tg->game_over = true;
         return true;
+    }
 
     return false;
 
@@ -662,7 +690,6 @@ inline int32_t get_elapsed_us(struct timeval before, struct timeval after) {
  * convert input array of int16_t to uint8_t 
 */
 void int16_to_uint8_arr(int16_t *in_arr, uint8_t *out_arr, uint8_t arr_size) {
-    uint8_t new_value;
     for (int i = 0; i < arr_size; i++) {
         // out_arr[i] = (uint8_t) ((in_arr[i]) >> 8);
         assert(in_arr[i] < 256 && in_arr[i] > -1 && "Can't cast OOB int16 to uint8!");
@@ -670,6 +697,17 @@ void int16_to_uint8_arr(int16_t *in_arr, uint8_t *out_arr, uint8_t arr_size) {
     }
 }
 
+/**
+ * convert input array of uint8_t to int16_t 
+*/
+void uint8_to_int16_arr(uint8_t *in_arr, int16_t *out_arr, uint8_t arr_size) {
+    for (int i = 0; i < arr_size; i++) {
+        // out_arr[i] = (uint8_t) ((in_arr[i]) >> 8);
+        out_arr[i] = (int16_t) (in_arr[i]);
+
+        assert(out_arr[i] < 256 && out_arr[i] > -1 && "Converstion to int16 from uint8 OOB!");
+    }
+}
 
 /**
  * a "Tetromino", or piece on the tetris board. 
@@ -684,37 +722,37 @@ const tetris_location TETROMINOS[NUM_TETROMINOS][NUM_ORIENTATIONS][NUM_CELLS_IN_
    {{0,0}, {1,0}, {1,1}, {2,1}},
    {{1,0}, {1,1}, {0,1}, {0,2}}
    },
-   // Z
+   // Z (1)
    {{{0,1}, {1,0}, {1,1}, {2,0}},
    {{0,0}, {0,1}, {1,1}, {1,2}},
    {{0,1}, {1,0}, {1,1}, {2,0}},
    {{0,0}, {0,1}, {1,1}, {1,2}}
    },
-    // T
+    // T (2)
    {{{0,0}, {0,1}, {0,2}, {1,1}},
    {{0,0}, {0,1}, {1,1}, {-1,1}},
    {{1,0}, {1,1}, {0,1}, {1,2}},
    {{0,1}, {1,1}, {-1,1}, {0,2}}
    }, 
-   // L
+   // L (3)
    {{{0,0}, {1,0}, {2,0}, {2,1}},
    {{0,1}, {1,-1}, {1,0}, {1,1}},
-   {{0,0}, {0,1}, {1,0}, {2,0}},
-   {{0,0}, {1,0}, {1,1}, {1,2}}
+   {{0,0}, {0,1}, {1,1}, {2,1}},
+   {{1,0}, {1,1}, {1,2}, {2,0}}
    },
-   // J
+   // J (4)
    {{{0,1}, {1,1}, {2,0}, {2,1}},
-   {{0,-1}, {0,0}, {0,1}, {1,1}},
+   {{0,0}, {0,1}, {0,2}, {1,2}},
    {{0,0}, {0,1}, {1,0}, {2,0}},
    {{0,0}, {1,0}, {1,1}, {1,2}}
    },
-   // SQUARE
+   // SQUARE (5)
    {{{0,0}, {0,1}, {1,0}, {1,1}},
    {{0,0}, {0,1}, {1,0}, {1,1}},
    {{0,0}, {0,1}, {1,0}, {1,1}},
    {{0,0}, {0,1}, {1,0}, {1,1}}
    },
-   // I
+   // I (6)
    {{{0,0}, {0,1}, {0,2}, {0,3}},
    {{0,0}, {1,0}, {2,0}, {3,0}},
    {{0,0}, {0,1}, {0,2}, {0,3}},
