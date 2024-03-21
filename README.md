@@ -36,3 +36,8 @@ This project has several goals.
 
 
 This game is my first attempt at writing a component of medium complexity, and one of my primary goals is bettering my understanding of development best practices to accelerate my work on future projects. 
+
+
+#### Some of what I've learned
+mostly for myself to not forget
+* CI build options in CMake, so that CI can build a different version depending on paths and such

@@ -16,6 +16,8 @@ IF(TETRIS_UNIT_TEST_MACRO)
     target_compile_definitions(test_tetris PUBLIC TETRIS_UNIT_TEST_DEF=1)
 ENDIF(TETRIS_UNIT_TEST_MACRO)
 
+# CI builds run from {PROJ_ROOT}/build, whereas I usually run the binary from
+#  ${PROJ_ROOT} itself
 OPTION(TETRIS_UNIT_TEST_CI "CI-specific path options" OFF) # disabled by default
 IF(TETRIS_UNIT_TEST_CI)
     target_compile_definitions(test_tetris PUBLIC TETRIS_UNIT_TEST_CI=1)
