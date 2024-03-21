@@ -38,7 +38,7 @@ void save_game_state(TetrisGame *tg, const char* filename) {
 
         // pretty-print board state to file for ease of differentiation
         fprintf(savefile, "[BOARD_IMAGE]\n");
-        print_board_state(tg->active_board, savefile);
+        print_board_state(tg->active_board, savefile, true);
 
         // save TetrisGame state
         fprintf(savefile, "\n\n[TETRIS_GAME_STRUCT]\n");

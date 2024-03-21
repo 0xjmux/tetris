@@ -98,10 +98,11 @@ static int handler(void* user, const char* section, const char* name,
  * @returns true if successful, false if not
 */
 bool restore_game_state(TetrisGame *tg, const char* filename, FILE *gamelog) {
-    // for some reason ini_parse throws an error even on successful read. bruh
-    if(ini_parse(filename, handler, tg)) {
-        fprintf(gamelog, "can't load game save %s!\n", filename);
-        // return false;
+
+    uint8_t parse_ret = ini_parse(filename, handler, tg);
+    if(parse_ret) {
+        fprintf(gamelog, "can't load game save %s, error code %d!\n", filename, parse_ret);
+        return false;
     }
     fprintf(gamelog, "Config loaded from %s!\n", filename);
 
@@ -152,22 +153,28 @@ void reconstruct_board_from_str_row(TetrisBoard *tb, const char *name, const cha
  * Print current board state to console
  * @param TetrisBoard
  * @param *file to print to - NULL for default
+ * @param ini_out - if printing to an .ini file, prepend each line with comment char ";"
 */
-void print_board_state(TetrisBoard tb, FILE *file) {
+void print_board_state(TetrisBoard tb, FILE *file, bool ini_out) {
     if (file == NULL) 
         file = gamelog;
     // draw existing pieces on board
     fprintf(file, "Highest occupied cell: %d\n   ", tb.highest_occupied_cell);
     fprintf(file, "  ");
+    // print col numbers
     for (int i = 0; i < TETRIS_COLS; i++) 
         fprintf(file, "%-2d  ",i);
     fprintf(file, "\n   ");
 
+    // print separator
     for (int i = 0; i < TETRIS_COLS; i++) 
         fprintf(file, "----");
     fprintf(file, "----\n");
 
     for (int i = 0; i < TETRIS_ROWS; i++) {
+        if (ini_out)
+            fprintf(file, "; ");
+        // print row number
         fprintf(file, "%-3d| ", i);
         for (int j = 0; j < TETRIS_COLS; j++) {
             if (tb.board[i][j] >= 0) {

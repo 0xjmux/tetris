@@ -144,14 +144,14 @@ void test_T_testPieceRotate(void) {
     fill_board_rectangle(&tg->board, TETRIS_ROWS - 5, 0, TETRIS_ROWS-5,4,1);
     fill_board_rectangle(&tg->active_board, TETRIS_ROWS - 5, 5, TETRIS_ROWS-5,TETRIS_COLS ,1);
     fill_board_rectangle(&tg->board, TETRIS_ROWS - 5, 5, TETRIS_ROWS-5,TETRIS_COLS ,1);
-    print_board_state(tg->active_board, stdout);
+    print_board_state(tg->active_board, stdout, false);
     TEST_ASSERT_TRUE(test_piece_rotate(&tg->board, tp));
     TEST_ASSERT_FALSE_MESSAGE(check_valid_move(tg, T_LEFT), "translated into occupied cell");
     TEST_ASSERT_FALSE(check_valid_move(tg, T_RIGHT));
     TEST_ASSERT_FALSE(check_valid_move(tg, T_DOWN));
     tp = create_tetris_piece(piecetype, TETRIS_ROWS - 6, 3, 1);
     setup_moveCheck(tg, 4, tp, &test_case);
-    print_board_state(tg->active_board, stdout);
+    print_board_state(tg->active_board, stdout, false);
     TEST_ASSERT_TRUE(test_piece_rotate(&tg->board, tp));
 }
 
@@ -166,7 +166,7 @@ void test_clearRows(void) {
     setup_moveCheck(tg, 5, tp, &test_case);
     // rows indexed from top, so this is rows 2&3
     clear_rows(tg, 28, 2);
-    print_board_state(tg->board, stdout);
+    print_board_state(tg->board, stdout, false);
     TEST_ASSERT_EQUAL_INT(TETRIS_ROWS - 3, tg->board.highest_occupied_cell);
     TEST_ASSERT_FALSE_MESSAGE(check_for_occ_cells_in_row(tg, TETRIS_ROWS - 4), \
         "failed to correctly move rows down after clear");
@@ -176,7 +176,7 @@ void test_clearRows(void) {
     fill_board_rectangle(&tg->board, 19, 6,  26, 10, 1);
     tg->board.highest_occupied_cell = 19;
     clear_rows(tg, 28, 2);
-    print_board_state(tg->board, stdout);
+    print_board_state(tg->board, stdout, false);
     TEST_ASSERT_EQUAL_INT(TETRIS_ROWS - 11, tg->board.highest_occupied_cell);
     TEST_ASSERT_FALSE_MESSAGE(check_for_occ_cells_in_row(tg, TETRIS_ROWS - 12), \
         "failed to correctly move rows down after rect shift");
@@ -184,7 +184,7 @@ void test_clearRows(void) {
     // test if a filled row is detected as filled
     setup_moveCheck(tg, 5, tp, &test_case);
     fill_board_rectangle(&tg->board, 25, 0,  26, TETRIS_COLS, 1);
-    print_board_state(tg->board, stdout);
+    print_board_state(tg->board, stdout, false);
     tg->board.highest_occupied_cell = 25;
     // check from row=25 to to bottom of board
     TEST_ASSERT_TRUE_MESSAGE(check_filled_row(tg, 25), "filled row not detected as filled");
@@ -199,7 +199,7 @@ void test_clearRows(void) {
     }
 }
 
-void test_clearRowsDumpedGame(void) {
+void test_clearRowsDumpedGame_1(void) {
 
     #ifdef TETRIS_UNIT_TEST_CI
     // rememebr, we're running from {proj_root}/build dir
@@ -221,9 +221,69 @@ void test_clearRowsDumpedGame(void) {
     TEST_ASSERT_FALSE_MESSAGE(check_filled_row(tg, 1), "incorrectly detected row 1 as filled");
 
     // now going to manually pass loc to check_and_clear_rows()
+    //  and see if it finds the row it needs to clear
     // func doesn't use tg->active_Piece, only tp_cells (for speed)
     tetris_location tp_cells[4] = {{27,0},{28,0},{29,0},{30,0}};
     TEST_ASSERT_EQUAL_INT(1, check_and_clear_rows(tg, tp_cells));
+}
+
+
+// now testing with L piece and test/files/gamestate-J-lined-up-dbl-clear.ini
+void test_clearRowsDumpedGame_2(void) {
+    // 2ND FILE
+    #ifdef TETRIS_UNIT_TEST_CI
+    // rememebr, we're running from {proj_root}/build dir
+    char* gamestate_file = "../test/files/gamestate-J-lined-up-dbl-clear.ini";
+    #else
+    // char* gamestate_file = "./test/files/gamestate-failed-to-remove-line.ini";
+    char* gamestate_file = "./test/files/gamestate-J-lined-up-dbl-clear.ini";
+    #endif
+    TEST_ASSERT_TRUE(restore_game_state(tg, gamestate_file, stdout));
+
+
+    // check restoring gamestate actually worked
+    TEST_ASSERT_EQUAL_INT(200000, tg->gravity_tick_rate_usec);
+    TEST_ASSERT_EQUAL_INT(4, tg->active_piece.ptype);
+    TEST_ASSERT_EQUAL_INT(22, tg->active_piece.loc.row);
+    TEST_ASSERT_EQUAL_INT(1, tg->active_piece.loc.col);
+    TEST_ASSERT_EQUAL_INT(2, tg->active_piece.orientation);
+
+    check_no_filled_rows(tg);
+
+    // 6 downward moves of this piece are needed before rows are cleared
+    move_piece_down(tg, 5);
+    TEST_ASSERT_EQUAL_INT(27, tg->active_piece.loc.row);
+
+    render_active_board(tg);
+
+
+    // move piece down last row
+    reset_game_gravity_time(tg);
+    TEST_ASSERT_TRUE_MESSAGE(check_do_piece_gravity(tg), "PIECE GRAVITY CHECK FAILED");
+    render_active_board(tg);
+
+    // now, this check should fail bc it has landed
+    TEST_ASSERT_FALSE_MESSAGE(check_do_piece_gravity(tg), "PIECE GRAVITY CHECK FALSE SUCCESS");
+
+    TEST_ASSERT_FALSE_MESSAGE(tg->active_piece.falling, "Piece still falling when it should have stopped");
+    #ifdef TEST_PRINT_BOARD
+    print_board_state(tg->active_board, stdout, false);
+    #endif
+    // some intermediary checks to make sure game state is what we expect
+
+
+    TEST_ASSERT_TRUE_MESSAGE(check_and_spawn_new_piece(tg), "CHECK SPAWN NEW PIECE FAILED");
+    // new piece should have spawned, which we can verify by checking active_piece.row
+    TEST_ASSERT_NOT_EQUAL_INT(28, tg->active_piece.loc.row);
+    // row cleared, so should still have no filled rows
+    check_no_filled_rows(tg);
+    print_board_state(tg->board, stdout, false);
+    // make sure new piece can move down
+    TEST_ASSERT_TRUE_MESSAGE(check_valid_move(tg, T_DOWN), "Brand new piece not able to move down!");
+    TEST_ASSERT_FALSE_MESSAGE(check_for_occ_cells_in_row(tg, 24), "rows failed to clear - occupied cells still present in top row");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(26, tg->board.highest_occupied_cell, "highest_occupied_cell didn't update correctly");
+
+
 
 }
 
@@ -238,7 +298,7 @@ void test_checkSpawnNewPiece(void) {
     tp = create_tetris_piece(S_PIECE, TETRIS_ROWS - 7, TETRIS_COLS - 3, 3);
     setup_moveCheck(tg, 5, tp, &test_case);
     // rows indexed from top, so this is rows 2&3
-    // print_board_state(tg->board, stdout);
+    // print_board_state(tg->board, stdout, false);
     TEST_ASSERT_FALSE_MESSAGE(check_and_spawn_new_piece(tg), \
         "Shouldn't spawn new piece when current one still active");
 
@@ -263,7 +323,7 @@ void test_checkSpawnNewPiece(void) {
 
     TEST_ASSERT_EQUAL_INT8_MESSAGE(25, tg->board.highest_occupied_cell, \
         "highest occupied cell not updated correctly");
-    print_board_state(tg->board, stdout);
+    print_board_state(tg->board, stdout, false);
 
 
 
@@ -345,7 +405,8 @@ int main(void)
     RUN_TEST(test_checkSpawnNewPiece);
     RUN_TEST(test_getElapsedUs);
     RUN_TEST(test_arr_helpers);
-    RUN_TEST(test_clearRowsDumpedGame);
+    RUN_TEST(test_clearRowsDumpedGame_1);
+    RUN_TEST(test_clearRowsDumpedGame_2);
     
 
     return UNITY_END();

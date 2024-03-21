@@ -85,7 +85,7 @@ void setup_moveCheck(TetrisGame *tg, uint8_t gen_height, \
     //  to see the game state being tested
     TetrisBoard render_board = render_active_board(tg);
     printf("Test case: %d\n", *test_state);
-    print_board_state(render_board, stdout);
+    print_board_state(render_board, stdout, false);
     *test_state += 1;
 
 
@@ -151,3 +151,45 @@ bool check_for_occ_cells_in_row(TetrisGame *tg, uint8_t row) {
 
     return false;
 }
+
+/**
+ * Check all rows in tetrisgame and make sure none are found to be filled
+*/
+void check_no_filled_rows(TetrisGame *tg) {
+    // check row states are correctly detected
+    for (int i = 0; i < TETRIS_ROWS; i++) {
+        TEST_ASSERT_FALSE_MESSAGE(check_filled_row(tg, i), "incorrectly detected row i as filled");
+    }
+
+
+}
+
+
+/** 
+ * Modify tg->gravity_tick_rate_usec and last_gravity_tick
+ * so that the gravity tick check always passes
+*/
+void reset_game_gravity_time(TetrisGame *tg) {
+    // bypass time check in game logic
+    tg->gravity_tick_rate_usec = 0; 
+    gettimeofday(&tg->last_gravity_tick_usec, NULL);
+    tg->last_gravity_tick_usec.tv_sec -= 1;
+    tg->last_gravity_tick_usec.tv_usec -= 100;
+}
+
+
+/**
+ * Helper function to move active_piece down `rows_to_move` and then
+ *  render board
+ * function assumes `rows_to_move` rows below current piece position
+ *  are valid locations to move to. 
+*/
+void move_piece_down(TetrisGame *tg, uint8_t rows_to_move) {
+    for (int i = 0; i < rows_to_move; i++) {
+        reset_game_gravity_time(tg);
+        TEST_ASSERT_TRUE_MESSAGE(check_do_piece_gravity(tg), "PIECE GRAVITY CHECK FAILED");
+    }
+    render_active_board(tg);
+}
+
+
