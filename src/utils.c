@@ -105,14 +105,6 @@ bool restore_game_state(TetrisGame *tg, const char* filename, FILE *gamelog) {
     }
     fprintf(gamelog, "Config loaded from %s!\n", filename);
 
-    /*
-    fprintf(gamelog, "active_piece: ptype = %d, loc_row = %d, loc_col = %d, orientation = %d, falling = %d\n", \
-        tg->active_piece.ptype, tg->active_piece.loc.row, tg->active_piece.loc.col, \
-        tg->active_piece.orientation, tg->active_piece.falling);
-
-    print_board_state(tg->active_board, gamelog);
-    */
-
     return true;
 
 }
@@ -151,7 +143,6 @@ void reconstruct_board_from_str_row(TetrisBoard *tb, const char *name, const cha
                 // printf("copied row %d: %s\n", i, value);
             }
         }
-
 
 }
 

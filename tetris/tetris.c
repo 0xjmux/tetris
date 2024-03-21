@@ -207,7 +207,7 @@ void tg_update_score(TetrisGame *tg, uint8_t lines_cleared) {
     tg->score += tg->level * points_per_level_cleared[lines_cleared];
 
     // update current highest cell
-    tg->board.highest_occupied_cell -= lines_cleared;
+    // tg->board.highest_occupied_cell -= lines_cleared;
 
     // every 10 lines, the level increases
     static uint8_t lines_cleared_since_last_level;
@@ -512,7 +512,9 @@ uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells) {
         row_with_offset = (uint8_t) tp_cells[i].row;
 
         assert(row_with_offset < TETRIS_ROWS && row_with_offset > -1 && "global row out of bounds");
+        #ifdef DEBUG_T
         fprintf(gamelog, "check_and_clear: checking row %d\n", row_with_offset);
+        #endif
 
         // if row is full, add it to list of rows to clear
         if(check_filled_row(tg, row_with_offset)) {
@@ -529,8 +531,14 @@ uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells) {
     // update highest occupied cell based on this piece
     assert(piece_max_row > -1 && piece_max_row < TETRIS_ROWS && "new tallest cell out of bounds");
 
-    if (piece_max_row <  tg->board.highest_occupied_cell)
+    // if this piece contains the new tallest cell on the board, update highest_occupied_cell accordingly
+    if (piece_max_row <  tg->board.highest_occupied_cell) {
         tg->board.highest_occupied_cell = piece_max_row;
+        #ifdef DEBUG_T
+        fprintf(gamelog, "piece max is new highest row; row=%d\n", piece_max_row);
+        #endif
+
+    }
 
     // if we have rows to clear:
     if (rows_idx > 0) {
