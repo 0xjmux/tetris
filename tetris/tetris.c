@@ -54,7 +54,7 @@ TetrisGame* create_game(void) {
     tg->game_over = false;
     tg->level = 1;
     tg->score = 0;
-    tg->gravity_tick_rate_usec = 200000;
+    tg->gravity_tick_rate_usec = GRAVITY_TICK_RATE_INITIAL;
     tg->lines_cleared_since_last_level = 0;
 
 
@@ -88,7 +88,10 @@ void end_game(TetrisGame *tg) {
 }
 
 /**
- * Process a single game tick
+ * Process a single Tetris game tick
+ * This function is the only one you need to call to use the tetris game - everything
+ *  is processed internally. Pass player moves into this function, and then just 
+ *  render the tg->active_board array to your desired display format. 
  * @param TetrisGame *tg
  * @param player_move move
  * @returns true if game is still going, false when game_over
@@ -105,8 +108,6 @@ bool tg_tick(TetrisGame *tg, enum player_move move) {
         fprintf(gamelog, "game over detected, returning false from tg_tick\n");
         return false;
     }
-
- 
 
     switch (move) {
         case T_NONE:
@@ -133,7 +134,7 @@ bool tg_tick(TetrisGame *tg, enum player_move move) {
             break;
         
         case T_PLAYPAUSE:
-            // IMPLEMENT
+            assert(false && "T_PLAYPAUSE should not be passed to tg_tick in current impl");
             break;
         
         // T_QUIT implemented by driver
@@ -156,8 +157,8 @@ bool tg_tick(TetrisGame *tg, enum player_move move) {
  * combine active_piece and existing board stack into active_board, 
  * which is then used by display system to display the actual game.
  * This function assumes placement of *tp in board is valid
+ * @returns active_board, but also updates ptr tg->active_board
 */
-// TetrisBoard render_active_board(TetrisGame *tg, TetrisPiece *tp) {
 TetrisBoard render_active_board(TetrisGame *tg) {
     TetrisBoard gameboard = tg->board;
     TetrisPiece tp = tg->active_piece;
@@ -205,27 +206,31 @@ void tg_update_score(TetrisGame *tg, uint8_t lines_cleared) {
     assert(lines_cleared < 5 && "Number of lines_cleared too large\n");
 
     // calculate score increase
-    tg->score += tg->level * points_per_level_cleared[lines_cleared];
+    tg->score += tg->level * points_per_line_cleared[lines_cleared];
 
     // increase num lines celared
     tg->lines_cleared_since_last_level += lines_cleared;
 
     // every 10 lines, the level increases
     if (tg->lines_cleared_since_last_level >= 10) {
-        #ifdef DEBUG_T
-        fprintf(gamelog, "Level increased to %d, lines_cleared_since_last_lvl=%d\n", \
-            tg->level + 1,tg->lines_cleared_since_last_level); 
-        #endif
 
         tg->level += 1;
         tg->lines_cleared_since_last_level = tg->lines_cleared_since_last_level % 10;
         assert(tg->lines_cleared_since_last_level < 10);
 
-        // when the level increases, the gravity tick also speeds up
-        //    (but only so far)
-        if (tg->gravity_tick_rate_usec > 200000) {
-            tg->gravity_tick_rate_usec -= 100000;
+        // when the level increases, the gravity tick speeds up if it's still above the floor
+        if (tg->gravity_tick_rate_usec > GRAVITY_TICK_RATE_FLOOR) {
+            // i haven't tested this lower bound but i assume it'll be very difficult
+            tg->gravity_tick_rate_usec -= GRAVITY_TICK_RATE_DELTA;
         }
+        assert(tg->gravity_tick_rate_usec > GRAVITY_TICK_RATE_FLOOR && \
+            "Gravity tick rate below minimum possible value (if unit testing, " && \
+            "check calls to reset_game_gravity_time()!");
+
+        #ifdef DEBUG_T
+        fprintf(gamelog, "Level increased! lvl=%d, lines_cleared_since_last_lvl=%d, grav_tick_rate usec=%d\n", \
+            tg->level,tg->lines_cleared_since_last_level, tg->gravity_tick_rate_usec); 
+        #endif
     }
 
     #ifdef DEBUG_T
@@ -254,18 +259,6 @@ TetrisPiece create_rand_piece(TetrisGame *tg) {
     tg->active_piece = new_piece;
     return new_piece;
 }
-
-/**
- * Simple function to create a new piece with the specified parameters
-*/
-TetrisPiece create_tetris_piece(enum piece_type ptype, \
-    int16_t row, int16_t col, uint8_t orientation) {
-    assert(orientation > -1 && orientation < 4 && "Orientation out of range");
-    TetrisPiece new_piece = {.ptype = ptype, .orientation = orientation, \
-        .loc.col = col, .loc.row = row , .falling=true};
-    return new_piece;
-}
-
 
 /**
  * Check if a given player TRANSLATION move of T_NONE, T_LEFT, T_RIGHT, 
@@ -312,11 +305,8 @@ bool check_valid_move(TetrisGame *tg, uint8_t player_move){
             for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
                 move_valid = move_valid && test_piece_offset(&tg->board, tp_cells[i], down_offset);
             }
-//            // if we can't move down, we must have reached the bottom
-//            if (!move_valid) {
-//                tg->active_piece.falling = false;
-//            }
             break;
+
         case T_LEFT:
             const tetris_location left_offset = {.row = 0, .col = -1};
             // test all 4 cells in tetronimo; if any are false, move is invalid
@@ -348,7 +338,9 @@ bool check_valid_move(TetrisGame *tg, uint8_t player_move){
  * Helper func to test if single cell translation of `offset` from 
  * `global_loc` is valid position for current piece
 */
-bool test_piece_offset(TetrisBoard *tb, const tetris_location global_loc, const tetris_location move_offset) {
+inline bool test_piece_offset(TetrisBoard *tb, const tetris_location global_loc, \
+    const tetris_location move_offset) {
+
     tetris_location testing_loc;    // location we want to move to
     testing_loc.row = global_loc.row + move_offset.row;
     testing_loc.col = global_loc.col + move_offset.col;
@@ -376,12 +368,11 @@ bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp) {
     }
 
     #ifdef DEBUG_T
-    fprintf(gamelog, "Current orientation=%d, orientation after rotation = %d\n", \
-        tp.orientation, ((tp.orientation+1) % 4));
-    fflush(gamelog);
+        fprintf(gamelog, "Current orientation=%d, orientation after rotation = %d\n", \
+            tp.orientation, ((tp.orientation+1) % 4));
+        fflush(gamelog);
     #endif
 
-    bool result = true;
     tetris_location testing_loc = tp_cells[0];
 
     for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
@@ -390,13 +381,13 @@ bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp) {
         if (tb->board[testing_loc.row][testing_loc.col] == -1 && \
             testing_loc.row > -1 && testing_loc.row < TETRIS_ROWS && \
             testing_loc.col > -1 && testing_loc.col < TETRIS_COLS)
-            result = result && true;
+            continue;
         else
             return false;
     }
 
-    // this could just be return true but whatever
-    return result;
+    // since we would've returned false if we failed earlier, just ret true now
+    return true;
 }
 
 
@@ -420,14 +411,14 @@ bool check_do_piece_gravity(TetrisGame *tg) {
     // check if it's time for piece to be moved down
     int32_t time_diff_usec = get_elapsed_us(tg->last_gravity_tick_usec, curr_time_usec);
 
-    if ( time_diff_usec > tg->gravity_tick_rate_usec) {
+    if (time_diff_usec > (int32_t)tg->gravity_tick_rate_usec) {
 
         // if can move down
         if(check_valid_move(tg, T_DOWN)) {
             tg->active_piece.loc.row += 1; // move location down
             #ifdef DEBUG_T
-            fprintf(gamelog, "Gravity tick activated systime=%ld, last tick=%ld: piece moved down\n", \
-                curr_time_usec.tv_usec, tg->last_gravity_tick_usec.tv_usec);
+                fprintf(gamelog, "Gravity tick activated systime=%ld, last tick=%ld: piece moved down\n", \
+                    curr_time_usec.tv_usec, tg->last_gravity_tick_usec.tv_usec);
             #endif
             tg->last_gravity_tick_usec = curr_time_usec;  // update gravity tick
 
@@ -435,7 +426,7 @@ bool check_do_piece_gravity(TetrisGame *tg) {
         else {
             // if can't move piece down, change falling to false and ret false
             #ifdef DEBUG_T
-            fprintf(gamelog, "Gravity tick activated: move down failed\n");
+                fprintf(gamelog, "Gravity tick activated: move down failed\n");
             #endif
             tg->active_piece.falling = false;
             return false;
@@ -472,8 +463,7 @@ bool check_filled_row(TetrisGame *tg, const uint8_t row) {
 */
 
 void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows) {
-    // starting at `row`, go up until you reach cell with value -1 
-    // or the top of the board
+    // starting at `row`, go up until you reach the top of the board
     assert(num_rows <= 4 && top_row <= TETRIS_ROWS - num_rows + 1);
 
     //  for each col on the board
@@ -482,7 +472,6 @@ void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows) {
         // by num_rows. stop when you would start pulling from OOB
         //  locations in tetris grid
         for (int row = top_row + num_rows - 1; row - num_rows > 0; row--) {
-            // possible edge case here with very top row?
             // get next row and move it down
             tg->board.board[row][col] = tg->board.board[row-num_rows][col];
             // fprintf(stdout, "Clearing row %d normally\n", row);
@@ -494,7 +483,6 @@ void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows) {
             tg->board.board[row][col] = BG_COLOR;
             // fprintf(stdout, "Clearing row=%d at top of board\n", row);
         }
-
     }
 
     // move highest occupied cell down by how many rows were cleared
@@ -518,7 +506,7 @@ uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells) {
      * check all 4 rows; which might mean checking the same row twice
     */ 
     uint8_t rows_to_clear[4];
-    uint8_t rows_idx = 0;       // index (and therefore size) of rows_to_clear
+    uint8_t rows_idx = 0;       // index (and size) of rows_to_clear
     uint8_t row_with_offset;
     uint8_t piece_max_row = TETRIS_ROWS;
     for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
@@ -526,7 +514,7 @@ uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells) {
 
         row_with_offset = (uint8_t) tp_cells[i].row;
 
-        assert(row_with_offset < TETRIS_ROWS && row_with_offset > -1 && "global row out of bounds");
+        assert(row_with_offset < TETRIS_ROWS && row_with_offset >= 0 && "global row out of bounds");
         #ifdef DEBUG_T
         fprintf(gamelog, "check_and_clear: checking row %d\n", row_with_offset);
         #endif
@@ -547,7 +535,7 @@ uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells) {
     }
 
     // update highest occupied cell based on this piece
-    assert(piece_max_row > -1 && piece_max_row < TETRIS_ROWS && "new tallest cell out of bounds");
+    assert(piece_max_row >=0 && piece_max_row < TETRIS_ROWS && "new tallest cell out of bounds");
 
     // if this piece contains the new tallest cell on the board, update highest_occupied_cell accordingly
     if (piece_max_row <  tg->board.highest_occupied_cell) {
@@ -592,10 +580,11 @@ bool check_and_spawn_new_piece(TetrisGame *tg) {
 
     // if we're here, we must have landed
     TetrisPiece tp = tg->active_piece; // last active piece
+
     #ifdef DEBUG_T
-    fprintf(gamelog, "Piece stopped falling at loc row=%d, col=%d, curr highest_row=%d\n", \
-        tp.loc.row, tp.loc.col, tg->board.highest_occupied_cell);
-    fflush(gamelog);
+        fprintf(gamelog, "Piece stopped falling at loc row=%d, col=%d, curr highest_row=%d\n", \
+            tp.loc.row, tp.loc.col, tg->board.highest_occupied_cell);
+        fflush(gamelog);
     #endif
 
     // set up active piece and array of offsets from current loc
@@ -635,14 +624,6 @@ bool check_and_spawn_new_piece(TetrisGame *tg) {
  * tg.game_over on true state. 
 */
 bool check_game_over(TetrisGame *tg) {
-    // currently there's an issue that when the stack gets to the top
-    // the board highest maxes out at 2 and it doesn't detect the 
-    // game over condition. it keeps adding pieces on top of each other, 
-    // whcih is a mess.
-
-
-
-    // NOT FINISHED BEING IMPL YET
 
     // if we get to 1 as a highest occupied cell, stop
     if (tg->board.highest_occupied_cell == 1) {
@@ -651,16 +632,15 @@ bool check_game_over(TetrisGame *tg) {
     }
 
     return false;
-
 }
 
 
 /**
 * Very simple inline function for checking if an int 
-* is already present in a short array of values
+* is already present in a short array of values of uint8_t
 */
-inline bool val_in_arr(uint8_t val, uint8_t arr[], const size_t arr_len) {
-   for (int i = 0; i < arr_len; i++) {
+inline bool val_in_arr(const uint8_t val, uint8_t arr[], const uint8_t arr_len) {
+   for (uint8_t i = 0; i < arr_len; i++) {
        if (arr[i] == val)
            return true;
    }
@@ -681,13 +661,11 @@ int16_t smallest_in_arr(int16_t arr[], uint8_t arr_size) {
     }
 
     #ifdef DEBUG_T
-
-    fprintf(gamelog, "smallest value in array {");
-    for (int i = 0; i < arr_size; i++) {
-        fprintf(gamelog, "%d, ", arr[i]);
-    }
-    fprintf(gamelog, "} is %d!\n", smallestVal);
-
+        fprintf(gamelog, "smallest value in array {");
+        for (int i = 0; i < arr_size; i++) {
+            fprintf(gamelog, "%d, ", arr[i]);
+        }
+        fprintf(gamelog, "} is %d!\n", smallestVal);
     #endif
 
     return smallestVal;

@@ -29,6 +29,8 @@ void reset_game_gravity_time(TetrisGame *tg);
 
 void move_piece_down(TetrisGame *tg, uint8_t rows_to_move);
 
+void check_occ_cells_above_highest(TetrisGame *tg);
+
 
 
 

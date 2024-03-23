@@ -10,7 +10,6 @@
  */
 
 #include "driver_tetris.h"
-#include "display.h"
 #include "utils.h"
 #include "tetris.h"
 
@@ -39,13 +38,12 @@ int main(void) {
     
     // refresh();
 
-    // create new ncurses window // NCURSES INIT DEBUGISH CODE
-    // const int winheight = BLOCK_WIDTH * TETRIS_ROWS;
     const int winheight = TETRIS_ROWS;
     const int winwidth = BLOCK_WIDTH * TETRIS_COLS;
-    // WINDOW *newwin(int nlines, int ncols, int begin_y, int begin_x);
+    // ncurses window def: WINDOW *newwin(int nlines, int ncols, int begin_y, int begin_x);
     g_win = newwin(winheight + 2, winwidth + 2, 2, 2);        // creates game window
-    nc_init_colors(g_win);
+
+    nc_init_colors();
     s_win = newwin(SCORE_WIN_ROWS, SCORE_WIN_COLS, 2, winwidth + 5); // score window
     box(g_win, 0,0);
     box(s_win, 0,0);
@@ -80,8 +78,10 @@ int main(void) {
     while (!tg->game_over && move != T_QUIT) {
 
 
+        // this function handles basically everything about the internal game state. 
+        // all the driver really has to do is pass `move` along to it and then print out
+        //  the tg->active_board array in whatever format is desired
         tg_tick(tg, move);
-        // IMPLEMENT WHAT HAPPENS ON GAME OVER!!
 
         // display board
         display_board(g_win, &tg->active_board);
@@ -100,9 +100,20 @@ int main(void) {
             case KEY_RIGHT:
                 move = T_RIGHT;
                 break;
-            case ' ':
-                move = T_PLAYPAUSE;
+            case ' ':   // SPACE pauses game
+                // move = T_PLAYPAUSE;
+                // align "PAUSED" text in game window ; window, y, x
+                wmove(g_win, (TETRIS_ROWS / 10), (TETRIS_COLS * BLOCK_WIDTH / 2) -2);
+                wprintw(g_win, "PAUSED");
+                wrefresh(g_win);
+                // change getch() back to blocking so pause holds until resumed
+                timeout(-1);
+                getch();
+                timeout(0);
+                move = T_NONE;
+
                 break;
+
             case 'q':
                 move = T_QUIT;
                 break;
@@ -135,15 +146,15 @@ int main(void) {
     save_game_state(tg, "final-gamestate.ini");
     #endif
 
-    printf("Game over! Level=%d, Score=%d\n", tg->level, tg->score);
 
     // TODO ask player if they want to play again
 
 
     // if we're here, game is over; dealloc tg
     end_game(tg);
-
     endwin();
+
+    printf("Game over! Level=%d, Score=%d\n", tg->level, tg->score);
 
 }
 
@@ -159,7 +170,6 @@ void display_board(WINDOW *w, TetrisBoard *tb) {
     int32_t usec_timediff = curr_time_usec.tv_usec - last_update.tv_usec; 
     // if it flows below zero, (seconds ticks over, but us doesn't) just run it
     if (usec_timediff > SCREEN_REFRESH_INTERVAL_USEC || usec_timediff < 0) {
-            // possible issue on first call with setting val of last_update
 
         werase(w);
         box(w, 0,0);
@@ -195,16 +205,7 @@ void display_board(WINDOW *w, TetrisBoard *tb) {
 
         // wnoutrefresh(w);
     }
-    // else {
-        // #ifdef DEBUG_T
-        // fprintf(gamelog, "last update timer: %ld ; curr_time = %ld, last_update=%ld\n", \
-        //  curr_time_usec.tv_usec - last_update.tv_usec, curr_time_usec.tv_usec, last_update.tv_usec);
-        // #endif
-    // }
  }
-
-
-// void draw_piece(WINDOW *w, TetrisBoard *tb)
 
 
 void update_score(WINDOW *w, TetrisGame *tg) {
@@ -213,6 +214,7 @@ void update_score(WINDOW *w, TetrisGame *tg) {
     wmove(w, 1, 1);
     mvwprintw(w, 1,1, "Score: %d\n", tg->score);
     mvwprintw(w, 2,1, "Level: %d\n", tg->level);
+    mvwprintw(w, 3,1, "Lines until next Level: %d\n", 10 - tg->lines_cleared_since_last_level);
 
     wnoutrefresh(w);
 
@@ -239,11 +241,6 @@ void refresh_debug_var_window(WINDOW *w) {
     box(w,0,0);
     wmove(w, 1, 1);
     TetrisPiece tp = tg->active_piece;
-    char const* piece_str[] =  {"S_PIECE", "Z_PIECE", "T_PIECE", "L_PIECE", "J_PIECE", "SQ_PIECE", "I_PIECE"};
-    /*
-    char const* move_str[] =  {"T_NONE", "T_UP", "T_DOWN", "T_LEFT", \
-    "T_RIGHT", "T_PLAYPAUSE", "T_QUIT"};
-    */
 
     mvwprintw(w, 1,1, "DEBUG INFO:\n");
     // mvwprintw(w, 2,1, "Current move: %s\n", move_str[move]);
@@ -253,10 +250,36 @@ void refresh_debug_var_window(WINDOW *w) {
     mvwprintw(w, 5,1, "Orientation: %d   Falling?: %d\n", tp.orientation, tp.falling);
     mvwprintw(w, 6,1, "BOARD INFO: highest cell: %d\n", tg->board.highest_occupied_cell);
 
-
-
     wnoutrefresh(w);
 
 }
 
+
+/**
+ * Initialize tetromino colors for ncurses
+*/
+// void nc_init_colors(WINDOW *w) {
+void nc_init_colors(void) {
+    start_color();
+    if (has_colors() == false) {
+        #ifdef DEBUG_T
+            fprintf(stdout, "Terminal doesn't have color support!\n");
+        #endif
+    }
+
+    init_pair(BG_COLOR, COLOR_BLACK, COLOR_BLACK);
+
+    // bug: S and L have same color - this is an ncurses issue
+    //  and because i'm using all 8 colors there's not much 
+    //  I can do about it
+    init_pair(S_CELL_COLOR, COLOR_GREEN, COLOR_BLACK);
+    init_pair(Z_CELL_COLOR, COLOR_RED, COLOR_BLACK);
+    init_pair(T_CELL_COLOR, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(L_CELL_COLOR, COLOR_WHITE, COLOR_BLACK);
+    init_pair(J_CELL_COLOR, COLOR_BLUE, COLOR_BLACK);
+    init_pair(SQ_CELL_COLOR, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(I_CELL_COLOR, COLOR_CYAN, COLOR_BLACK);
+    
+
+}
 

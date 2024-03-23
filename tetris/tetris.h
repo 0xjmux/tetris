@@ -11,16 +11,18 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #ifdef __linux__
 #include <stdio.h>
 #include <stdlib.h>         // used for malloc(), free()
-#include <assert.h>
 #include <string.h>         // memcpy
 #include <sys/time.h>       // timeval for microsecond time intervals
 #endif
 
 // TETRIS GAME LOGIC DEBUG FLAG
+// all print/fprintf statements in tetris.c are gated by this flag. extremely helpful
+//  for debugging, but will need to be disabled on MCU platforms
 #define DEBUG_T 1
 
 #ifdef DEBUG_T
@@ -39,6 +41,13 @@ extern FILE *gamelog;
 #define NUM_ORIENTATIONS 4
 #define NUM_CELLS_IN_TETROMINO 4
 
+// how many microseconds faster game tick should be after each level increase
+#define GRAVITY_TICK_RATE_DELTA 10000
+// initial gravity tick rate (how fast between each gravity move down in microseconds)
+#define GRAVITY_TICK_RATE_INITIAL 200000
+// gravity_tick minimum where we won't decrease it any further past this point
+#define GRAVITY_TICK_RATE_FLOOR 20000
+
 // piece descriptions
 // S, Z, T, L, reverse L (J), square, long bar (I)
 enum piece_type {S_PIECE, Z_PIECE, T_PIECE, L_PIECE, J_PIECE, SQ_PIECE, I_PIECE};
@@ -49,9 +58,9 @@ enum piece_colors {S_CELL_COLOR, Z_CELL_COLOR, T_CELL_COLOR, L_CELL_COLOR, J_CEL
 // Define possible moves that can be taken by player
 enum player_move {T_NONE, T_UP, T_DOWN, T_LEFT, T_RIGHT, T_PLAYPAUSE, T_QUIT};
 
-// Points per level cleared, combos not implemented
+// Points per line cleared, combos not implemented
 // See: https://tetris.wiki/Scoring
-static const uint16_t points_per_level_cleared[5] = {0, 100, 300, 500, 800};
+static const uint16_t points_per_line_cleared[5] = {0, 100, 300, 500, 800};
 
 /**
  * row,col location on tetris board, from top right. 
@@ -64,7 +73,6 @@ typedef struct tetris_location {
 
 // tetris piece descriptions - defined here to prevent multiple definition
 extern const tetris_location TETROMINOS[NUM_TETROMINOS][NUM_ORIENTATIONS][NUM_CELLS_IN_TETROMINO];
-
 
 /**
  * Struct representing a single Tetromino
@@ -93,10 +101,6 @@ typedef struct TetrisBoard {
 
 } TetrisBoard;
 
-
-TetrisBoard init_board(void);
-
-
 /**
  * Tetris Game Struct
  * @param board 2D struct array of set pieces on board
@@ -123,32 +127,38 @@ typedef struct TetrisGame {
     struct timeval last_gravity_tick_usec;
 } TetrisGame;
 
+////////////////////////////////////////
+//////       FUNCTION DEFS        //////
+////////////////////////////////////////
+
+// init/end functions
 TetrisGame* create_game(void);
 void end_game(TetrisGame *tg);
+TetrisBoard init_board(void);
+
+// THIS IS THE MAIN FUNCTION for using the library; all game state is handled internally
 bool tg_tick(TetrisGame *tg, enum player_move move);
 
-bool check_valid_move(TetrisGame *tg, uint8_t player_move);
 
 TetrisBoard render_active_board(TetrisGame *tg);
-TetrisPiece create_rand_piece(TetrisGame *tg);
-TetrisPiece create_tetris_piece(enum piece_type ptype, int16_t row, int16_t col, uint8_t orientation);
+bool check_and_spawn_new_piece(TetrisGame *tg);
 
+TetrisPiece create_rand_piece(TetrisGame *tg);
+
+// check game state conditions
+bool check_valid_move(TetrisGame *tg, uint8_t player_move);
 bool test_piece_offset(TetrisBoard *tb, const tetris_location global_loc, const tetris_location move_offset);
 bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp);
-
-
 bool check_do_piece_gravity(TetrisGame *tg);
 
-void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows);
 bool check_filled_row(TetrisGame *tg, uint8_t row);
 uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells);
-
-bool check_and_spawn_new_piece(TetrisGame *tg);
+void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows);
 
 bool check_game_over(TetrisGame *tg);
 
 // helper functions
-bool val_in_arr(uint8_t val, uint8_t arr[], const size_t arr_len);
+bool val_in_arr(const uint8_t val, uint8_t arr[], const uint8_t arr_len);
 int32_t get_elapsed_us(struct timeval before, struct timeval after);
 int16_t smallest_in_arr(int16_t arr[], const uint8_t arr_size);
 void int16_to_uint8_arr(int16_t *in_arr, uint8_t *out_arr, uint8_t arr_size);

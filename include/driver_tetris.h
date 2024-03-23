@@ -16,7 +16,6 @@
 #include "ini.h"
 
 #include "tetris.h"
-#include "display.h"
 
 
 
@@ -49,4 +48,10 @@ void print_keypress(enum player_move move);
 
 // void refresh_debug_var_window(WINDOW *w, enum player_move move);
 void refresh_debug_var_window(WINDOW *w);
+
+void nc_init_colors(void);
+
+
+
+
 #endif

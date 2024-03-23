@@ -156,6 +156,16 @@ bool check_for_occ_cells_in_row(TetrisGame *tg, uint8_t row) {
     return false;
 }
 
+
+/**
+ * Check all rows above highest_occupied_cell for occupied cells. 
+*/
+void check_occ_cells_above_highest(TetrisGame *tg) {
+    for (int i = 0; i < tg->board.highest_occupied_cell; i++) {
+        TEST_ASSERT_FALSE_MESSAGE(check_for_occ_cells_in_row(tg, i), "Found occupied cell above tg->highest_occupied!");
+    }
+}
+
 /**
  * Check all rows in tetrisgame and make sure none are found to be filled
 */
@@ -172,6 +182,8 @@ void check_no_filled_rows(TetrisGame *tg) {
 /** 
  * Modify tg->gravity_tick_rate_usec and last_gravity_tick
  * so that the gravity tick check always passes
+ * @note gravity_tick_rate_usec set to 0, and last_gravity_tick_usec
+ *  modified!
 */
 void reset_game_gravity_time(TetrisGame *tg) {
     // bypass time check in game logic

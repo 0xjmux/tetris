@@ -12,8 +12,6 @@ Testing/
 sdkconfig
 sdkconfig.old
 
-*.log
-
 
 *.swp
 a.out

@@ -28,7 +28,9 @@ jobs:
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       # -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-      run: cmake -B ${{github.workspace}}/build -DTARGET_GROUP=test -DTETRIS_UNIT_TEST_CI=ON
+      run: cmake -B ${{github.workspace}}/build -DTARGET_GROUP=test
+        -DTETRIS_UNIT_TEST_CI=ON
+        -DTETRIS_PRINT_BOARD_IN_TESTS_MACRO=ON
       # run: cmake -B ${{github.workspace}}/build -DTARGET_GROUP=test -DTETRIS_UNIT_TEST_MACRO=ON
       # build cmake in build dir with CI unit test flag turned on - disable macro bc causes some tests to not run
 

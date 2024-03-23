@@ -15,8 +15,8 @@
 #include "ini.h"
 
 #include "tetris.h"
-#include "display.h"
 
+TetrisPiece create_tetris_piece(enum piece_type ptype, int16_t row, int16_t col, uint8_t orientation);
 const char* get_piece_str(enum piece_type ptype);
 
 void print_board_state(TetrisBoard tb, FILE *file, bool ini_out);

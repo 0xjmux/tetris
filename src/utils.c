@@ -6,8 +6,6 @@
 
 #include "utils.h"
 
-
-
 /**
  * Returns piece_type as string for debugging purposes
 */
@@ -15,6 +13,18 @@ const char* get_piece_str(enum piece_type ptype) {
     assert(ptype < 7 && "piece_type enum out of range!");
     const char* piece_str[] =  {"S_PIECE", "Z_PIECE", "T_PIECE", "L_PIECE", "J_PIECE", "SQ_PIECE", "I_PIECE"};
     return piece_str[ptype];
+}
+
+
+/**
+ * Simple function to create a new piece with the specified parameters
+*/
+TetrisPiece create_tetris_piece(enum piece_type ptype, \
+    int16_t row, int16_t col, uint8_t orientation) {
+    assert(orientation >= 0 && orientation < 4 && "Orientation out of range");
+    TetrisPiece new_piece = {.ptype = ptype, .orientation = orientation, \
+        .loc.col = col, .loc.row = row , .falling=true};
+    return new_piece;
 }
 
 
@@ -96,7 +106,7 @@ static int handler(void* user, const char* section, const char* name,
     }
 
     else if (MATCH_SECTION("BOARD_IMAGE")) {
-        //we're ignoring the pretty print
+        //we're ignoring the pretty print section
         ;
     }
 
@@ -222,15 +232,13 @@ void save_game_state(TetrisGame *tg, const char* filename) {
 void ini_save_board_to_file(FILE *file, TetrisBoard tb) {
 
     for (int i = 0; i < TETRIS_ROWS; i++) {
-        // fprintf(file, "%-3d| ", i);
         fprintf(file, "row_%d = ", i);
         for (int j = 0; j < TETRIS_COLS - 1; j++) {
-            fprintf(file, "%-2d,", tb.board[i][j]);
+            fprintf(file, "%2d,", tb.board[i][j]);
         }
-        fprintf(file, "%-2d\n", tb.board[i][TETRIS_COLS - 1]);
+        fprintf(file, "%2d\n", tb.board[i][TETRIS_COLS - 1]);
         
     }
-    // fprintf(file, "}\n");
     fflush(file);
 }
 
@@ -246,20 +254,23 @@ void print_board_state(TetrisBoard tb, FILE *file, bool ini_out) {
         file = gamelog;
     // draw existing pieces on board
     if (ini_out) fprintf(file, "; ");
-    fprintf(file, "Highest occupied cell: %d\n   ", tb.highest_occupied_cell);
-    fprintf(file, "  ");
+    fprintf(file, "Highest occupied cell: %d\n", tb.highest_occupied_cell);
+
     // print col numbers
     if (ini_out) fprintf(file, "; ");
+    fprintf(file, "  ");
     for (int i = 0; i < TETRIS_COLS; i++) 
         fprintf(file, "%-2d  ",i);
-    fprintf(file, "\n   ");
+    fprintf(file, "\n");
 
     // print separator
+    fprintf(file, "   ");
     if (ini_out) fprintf(file, "; ");
     for (int i = 0; i < TETRIS_COLS; i++) 
         fprintf(file, "----");
     fprintf(file, "----\n");
 
+    // print board itself
     for (int i = 0; i < TETRIS_ROWS; i++) {
         if (ini_out) fprintf(file, "; ");
         // print row number

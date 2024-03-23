@@ -15,12 +15,6 @@ TetrisBoard tb;
 
 // #define TEST_PRINT_BOARD
 
-//#ifdef DEBUG_T
-//#include <stdio.h>
-//// DEBUG_T is tetris game logic debug flag
-//// linker didn't like it being included normally
-//#endif
-
 /**
  * Runs before each test
 */
@@ -211,7 +205,10 @@ void test_clearRows(void) {
     }
 
     // test edge case of clearing top rows
-    fprintf(stdout, "testing clearing operation on top rows\n");
+    #ifdef TEST_PRINT_BOARD
+        fprintf(stdout, "testing clearing operation on top rows\n");
+    #endif
+
 
     fill_board_rectangle(&tg->board, 1, 0, 3, TETRIS_COLS, 1);
     #ifdef TEST_PRINT_BOARD
@@ -236,9 +233,8 @@ void test_clearRows(void) {
     check_no_filled_rows(tg);   // no rows should be filled at this point
 
     // no cells above row 20 should have anything in them
-    for (int i = 0 ; i < 20; i++) {
-        check_for_occ_cells_in_row(tg, i);
-    }
+    tg->board.highest_occupied_cell = 20;
+    check_occ_cells_above_highest(tg);
 
     
 
@@ -271,6 +267,8 @@ void test_clearRowsDumpedGame_1(void) {
     // func doesn't use tg->active_Piece, only tp_cells (for speed)
     tetris_location tp_cells[4] = {{27,0},{28,0},{29,0},{30,0}};
     TEST_ASSERT_EQUAL_INT(1, check_and_clear_rows(tg, tp_cells));
+
+    check_occ_cells_above_highest(tg);
 }
 
 
@@ -322,6 +320,8 @@ void test_clearRowsDumpedGame_2(void) {
     // some intermediary checks to make sure game state is what we expect
 
 
+    // fix gravity_tick_rate_usec back to original after it was changed by reset_game_gravity_time()
+    tg->gravity_tick_rate_usec = GRAVITY_TICK_RATE_INITIAL;
     TEST_ASSERT_TRUE_MESSAGE(check_and_spawn_new_piece(tg), "CHECK SPAWN NEW PIECE FAILED");
     // new piece should have spawned, which we can verify by checking active_piece.row
     TEST_ASSERT_NOT_EQUAL_INT(28, tg->active_piece.loc.row);
@@ -336,6 +336,8 @@ void test_clearRowsDumpedGame_2(void) {
     TEST_ASSERT_FALSE_MESSAGE(check_for_occ_cells_in_row(tg, 24), "rows failed to clear - occupied cells still present in top row");
     TEST_ASSERT_EQUAL_INT_MESSAGE(26, tg->board.highest_occupied_cell, "highest_occupied_cell didn't update correctly");
 
+    check_occ_cells_above_highest(tg);
+
     // updated board
     #ifdef TEST_PRINT_BOARD
         print_board_state(tg->board, stdout, false);
@@ -345,6 +347,8 @@ void test_clearRowsDumpedGame_2(void) {
     TEST_ASSERT_EQUAL_INT_MESSAGE(1, tg->lines_cleared_since_last_level, "lines_cleared_since_last_level didn't update correctly");
     TEST_ASSERT_EQUAL_INT_MESSAGE(2, tg->level, "level not updated correctly");
     TEST_ASSERT_EQUAL_INT_MESSAGE(1100, tg->score, "score didn't update correctly");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(GRAVITY_TICK_RATE_INITIAL - GRAVITY_TICK_RATE_DELTA, tg->gravity_tick_rate_usec, \
+        "gravity tick rate incorrect after level increase!");
 
 
 }
@@ -364,11 +368,11 @@ void test_checkSpawnNewPiece(void) {
         "Shouldn't spawn new piece when current one still active");
 
     // bypass time check in game logic
-    tg->gravity_tick_rate_usec = 0; 
-    gettimeofday(&tg->last_gravity_tick_usec, NULL);
-    tg->last_gravity_tick_usec.tv_sec -= 1;
-    tg->last_gravity_tick_usec.tv_usec -= 100;
+    reset_game_gravity_time(tg);
 
+    // set up for level increase on row clear
+    tg->lines_cleared_since_last_level = 9;
+    tg->level = 1;
 
     // do gravity should fail since we're at bottom, and 
     //  should change active_piece.falling to false
@@ -383,12 +387,7 @@ void test_checkSpawnNewPiece(void) {
         "Spawn new piece when active_piece.falling=false failed");
 
     TEST_ASSERT_EQUAL_INT8_MESSAGE(25, tg->board.highest_occupied_cell, \
-        "highest occupied cell not updated correctly");
-
-    #ifdef TEST_PRINT_BOARD
-        print_board_state(tg->board, stdout, false);
-    #endif
-
+        "highest occupied cell not updated correctly after row clear");
 
 
     // test piece stopped falling invalid case
@@ -397,11 +396,6 @@ void test_checkSpawnNewPiece(void) {
 
 }
 
-// test score handling logic
-void test_update_score_level(void) {
-
-
-}
 
 void test_getElapsedUs(void) {
     struct timeval before, after;
@@ -476,6 +470,8 @@ int main(void)
     UNITY_BEGIN();
     // these tests assume a 16x32 board, i haven't tested otherwise
     assert(TETRIS_ROWS == 32 && TETRIS_COLS == 16);
+
+    printf("==== RUNNING UNIT TESTS ON TETRIS =====\n");
 
     RUN_TEST(test_checkValidMove);
     RUN_TEST(test_T_testPieceRotate);
