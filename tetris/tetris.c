@@ -474,7 +474,7 @@ bool check_filled_row(TetrisGame *tg, const uint8_t row) {
 void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows) {
     // starting at `row`, go up until you reach cell with value -1 
     // or the top of the board
-    assert(num_rows <= 4 && top_row <= TETRIS_ROWS - num_rows);
+    assert(num_rows <= 4 && top_row <= TETRIS_ROWS - num_rows + 1);
 
     //  for each col on the board
     for (int col = 0; col < TETRIS_COLS; col++) {
@@ -533,8 +533,11 @@ uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells) {
 
         // if row is full, add it to list of rows to clear
         if(check_filled_row(tg, row_with_offset)) {
-            rows_to_clear[rows_idx] = row_with_offset;
-            rows_idx += 1;
+            // but first, check to make sure we haven't already added it to the list
+            if (!val_in_arr(row_with_offset, rows_to_clear, rows_idx + 1)) {
+                rows_to_clear[rows_idx] = row_with_offset;
+                rows_idx += 1;
+            }
         }
 
         // test each piece location to see if this cell is the new highest occupied cell
@@ -652,18 +655,18 @@ bool check_game_over(TetrisGame *tg) {
 }
 
 
-///**
-// * Very simple inline function for checking if an int 
-// * is already present in a short array of values
-//*/
-//inline bool val_in_arr(const int val, const int arr[], const size_t arr_len) {
-//    for (int i = 0; i < arr_len; i++) {
-//        if (arr[i] == val)
-//            return true;
-//    }
-//    return false;
-//
-//}
+/**
+* Very simple inline function for checking if an int 
+* is already present in a short array of values
+*/
+inline bool val_in_arr(uint8_t val, uint8_t arr[], const size_t arr_len) {
+   for (int i = 0; i < arr_len; i++) {
+       if (arr[i] == val)
+           return true;
+   }
+   return false;
+
+}
 
 /**
  * Simple helper function to return smallest value in array

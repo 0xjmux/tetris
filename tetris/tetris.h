@@ -148,6 +148,7 @@ bool check_and_spawn_new_piece(TetrisGame *tg);
 bool check_game_over(TetrisGame *tg);
 
 // helper functions
+bool val_in_arr(uint8_t val, uint8_t arr[], const size_t arr_len);
 int32_t get_elapsed_us(struct timeval before, struct timeval after);
 int16_t smallest_in_arr(int16_t arr[], const uint8_t arr_size);
 void int16_to_uint8_arr(int16_t *in_arr, uint8_t *out_arr, uint8_t arr_size);

@@ -83,10 +83,10 @@ void setup_moveCheck(TetrisGame *tg, uint8_t gen_height, \
     // render active board with state for debugging
     // technically not necessary for this test but very helpful
     //  to see the game state being tested
-    TetrisBoard render_board = render_active_board(tg);
-    printf("Test case: %d\n", *test_state);
+    render_active_board(tg);
 
     #ifdef TEST_PRINT_BOARD
+        printf("Test case: %d\n", *test_state);
         print_board_state(tg->board, stdout, false);
     #endif
 

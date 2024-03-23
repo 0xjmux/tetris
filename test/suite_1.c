@@ -457,6 +457,15 @@ void test_arr_helpers(void) {
     TEST_ASSERT_EQUAL_INT16_ARRAY_MESSAGE(arr7_int16, \
        arr7_exp, ARR7_SIZE, "arr7 conversion to int16 incorrect");
     TEST_ASSERT_EQUAL_INT16(0, smallest_in_arr(arr7_int16, ARR7_SIZE));
+
+
+    // test val_in_arr
+    TEST_ASSERT_TRUE_MESSAGE(val_in_arr(2, arr7_uint, ARR7_SIZE), "val_in_arr failed to find value 2!");
+    TEST_ASSERT_TRUE_MESSAGE(val_in_arr(5, arr7_uint, ARR7_SIZE), "val_in_arr failed to find value 5!");
+    TEST_ASSERT_FALSE_MESSAGE(val_in_arr(30, arr7_uint, ARR7_SIZE), "val_in_arr found nonexistent value!");
+    uint8_t arr8_uint[4] = {30,30,31};
+    TEST_ASSERT_TRUE_MESSAGE(val_in_arr(30, arr8_uint, 4), "val_in_arr failed to find value 30 in arr8!");
+    TEST_ASSERT_FALSE_MESSAGE(val_in_arr(2, arr8_uint, 4), "val_in_arr found nonexistent value in arr8!");
 }
 
 

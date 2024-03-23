@@ -21,6 +21,7 @@ ENDIF(TETRIS_UNIT_TEST_MACRO)
 OPTION(TETRIS_UNIT_TEST_CI "CI-specific path options" OFF) # disabled by default
 IF(TETRIS_UNIT_TEST_CI)
     target_compile_definitions(test_tetris PUBLIC TETRIS_UNIT_TEST_CI=1)
+    target_compile_definitions(test_tetris PUBLIC TEST_PRINT_BOARD=1)
 ENDIF(TETRIS_UNIT_TEST_CI)
 
 target_link_libraries(test_tetris
