@@ -182,7 +182,7 @@ void display_board(WINDOW *w, TetrisBoard *tb) {
         last_update = curr_time_usec;
         wrefresh(w);
         #ifdef DEBUG_T
-        fprintf(gamelog, "display_board()\n");
+        // fprintf(gamelog, "display_board()\n");
         // print_board_state(*tb, gamelog);
         fflush(gamelog);
         #endif
@@ -247,7 +247,8 @@ void refresh_debug_var_window(WINDOW *w) {
 
     mvwprintw(w, 1,1, "DEBUG INFO:\n");
     // mvwprintw(w, 2,1, "Current move: %s\n", move_str[move]);
-    mvwprintw(w, 3,1, "Piece: %s\n", piece_str[tp.ptype]);
+    // mvwprintw(w, 3,1, "Piece: %s\n", piece_str[tp.ptype]);
+    mvwprintw(w, 3,1, "Piece: %s\n", get_piece_str(tp.ptype));
     mvwprintw(w, 4,1, "Piece Row: %d   Piece col: %d\n", tp.loc.row, tp.loc.col);
     mvwprintw(w, 5,1, "Orientation: %d   Falling?: %d\n", tp.orientation, tp.falling);
     mvwprintw(w, 6,1, "BOARD INFO: highest cell: %d\n", tg->board.highest_occupied_cell);

@@ -55,6 +55,7 @@ TetrisGame* create_game(void) {
     tg->level = 1;
     tg->score = 0;
     tg->gravity_tick_rate_usec = 200000;
+    tg->lines_cleared_since_last_level = 0;
 
 
     #ifdef DEBUG_T
@@ -198,25 +199,27 @@ TetrisBoard render_active_board(TetrisGame *tg) {
 /** 
  * Updates game score based on # lines cleared, along with
  * level and gravity tick rate
+ * Every 10 lines cleared, level increases by 1
 */
 void tg_update_score(TetrisGame *tg, uint8_t lines_cleared) {
     assert(lines_cleared < 5 && "Number of lines_cleared too large\n");
 
-
     // calculate score increase
     tg->score += tg->level * points_per_level_cleared[lines_cleared];
 
-    // update current highest cell
-    // tg->board.highest_occupied_cell -= lines_cleared;
+    // increase num lines celared
+    tg->lines_cleared_since_last_level += lines_cleared;
 
     // every 10 lines, the level increases
-    static uint8_t lines_cleared_since_last_level;
-    lines_cleared_since_last_level += lines_cleared;
+    if (tg->lines_cleared_since_last_level >= 10) {
+        #ifdef DEBUG_T
+        fprintf(gamelog, "Level increased to %d, lines_cleared_since_last_lvl=%d\n", \
+            tg->level + 1,tg->lines_cleared_since_last_level); 
+        #endif
 
-    if (lines_cleared_since_last_level >= 10) {
         tg->level += 1;
-        lines_cleared_since_last_level = lines_cleared_since_last_level % 10;
-        assert(lines_cleared_since_last_level < 10);
+        tg->lines_cleared_since_last_level = tg->lines_cleared_since_last_level % 10;
+        assert(tg->lines_cleared_since_last_level < 10);
 
         // when the level increases, the gravity tick also speeds up
         //    (but only so far)
@@ -226,10 +229,10 @@ void tg_update_score(TetrisGame *tg, uint8_t lines_cleared) {
     }
 
     #ifdef DEBUG_T
-    fprintf(gamelog, "Score updated for %d lines cleared. Score = %d, Level = %d \
-Lines cleared since last level=%d - highest_row=%d\n", lines_cleared, tg->score, tg->level, 
-    lines_cleared_since_last_level, tg->board.highest_occupied_cell);
-    fflush(gamelog);
+        fprintf(gamelog, "Score updated for %d lines cleared. Score = %d, Level = %d \
+    Lines cleared since last level=%d - highest_row=%d\n", lines_cleared, tg->score, tg->level, 
+        tg->lines_cleared_since_last_level, tg->board.highest_occupied_cell);
+        fflush(gamelog);
     #endif
 
 }
@@ -265,14 +268,16 @@ TetrisPiece create_tetris_piece(enum piece_type ptype, \
 
 
 /**
- * Check if a given player move of T_NONE, T_LEFT, T_RIGHT, 
- * T_DOWN, T_UP (rotate) is valid
+ * Check if a given player TRANSLATION move of T_NONE, T_LEFT, T_RIGHT, 
+ * T_DOWN, is valid
 */
 bool check_valid_move(TetrisGame *tg, uint8_t player_move){
     TetrisPiece tp = tg->active_piece;
     tetris_location tp_cells[NUM_CELLS_IN_TETROMINO];
+
     // copy offsets for current piece into tp_cells
     memcpy(tp_cells, TETROMINOS[tp.ptype][tp.orientation], sizeof(tp_cells));
+
     // change those offsets to global piece locations
     for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
         tp_cells[i].row += tp.loc.row;
@@ -469,17 +474,27 @@ bool check_filled_row(TetrisGame *tg, const uint8_t row) {
 void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows) {
     // starting at `row`, go up until you reach cell with value -1 
     // or the top of the board
-    assert(num_rows <= 4 && top_row < TETRIS_ROWS);
+    assert(num_rows <= 4 && top_row <= TETRIS_ROWS - num_rows);
 
     //  for each col on the board
     for (int col = 0; col < TETRIS_COLS; col++) {
         // starting at bottom row, move everything above it down
-        // by num_rows
-        for (int i = top_row + num_rows - 1; i > 1; i--) {
+        // by num_rows. stop when you would start pulling from OOB
+        //  locations in tetris grid
+        for (int row = top_row + num_rows - 1; row - num_rows > 0; row--) {
             // possible edge case here with very top row?
             // get next row and move it down
-            tg->board.board[i][col] = tg->board.board[i-num_rows][col];
+            tg->board.board[row][col] = tg->board.board[row-num_rows][col];
+            // fprintf(stdout, "Clearing row %d normally\n", row);
         }
+        // clear rows at the very top of the board, where we want to avoid 
+        //  reading garbage from invalid board locations
+        for (int row = num_rows; row > 0; row--) {
+            assert(row < TETRIS_ROWS);
+            tg->board.board[row][col] = BG_COLOR;
+            // fprintf(stdout, "Clearing row=%d at top of board\n", row);
+        }
+
     }
 
     // move highest occupied cell down by how many rows were cleared
@@ -575,7 +590,8 @@ bool check_and_spawn_new_piece(TetrisGame *tg) {
     // if we're here, we must have landed
     TetrisPiece tp = tg->active_piece; // last active piece
     #ifdef DEBUG_T
-    fprintf(gamelog, "Piece stopped falling at loc row=%d, col=%d\n", tp.loc.row, tp.loc.col);
+    fprintf(gamelog, "Piece stopped falling at loc row=%d, col=%d, curr highest_row=%d\n", \
+        tp.loc.row, tp.loc.col, tg->board.highest_occupied_cell);
     fflush(gamelog);
     #endif
 

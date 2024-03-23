@@ -26,6 +26,7 @@ a.out
 # debugging files
 gdb*
 gamestate.ini
+final-gamestate.ini
 *.log
 debug-cores/
 

@@ -85,7 +85,11 @@ void setup_moveCheck(TetrisGame *tg, uint8_t gen_height, \
     //  to see the game state being tested
     TetrisBoard render_board = render_active_board(tg);
     printf("Test case: %d\n", *test_state);
-    print_board_state(render_board, stdout, false);
+
+    #ifdef TEST_PRINT_BOARD
+        print_board_state(tg->board, stdout, false);
+    #endif
+
     *test_state += 1;
 
 
@@ -145,7 +149,7 @@ void print_piece(const tetris_location t[4][4]) {
 */
 bool check_for_occ_cells_in_row(TetrisGame *tg, uint8_t row) {
     for (int i = 0; i < TETRIS_COLS; i++) {
-        if (tg->board.board[row][i] != -1) 
+        if (tg->board.board[row][i] != BG_COLOR) 
             return true;
     }
 

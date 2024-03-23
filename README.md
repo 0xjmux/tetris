@@ -8,20 +8,21 @@ The game was branched off to it's own repository because the embedded project so
 * [ ] Finish tetris game logic
 * [ ] fix gameover state not detected
 * [ ] fix duplicate colors
-* [ ] figure out what's causing a bunch of out-of-bounds numbers to show up in row 1 of board - i think this is a type issue with uint & int types!
-    * [ ] this might be fixed with new type conversion functions? idk
-* [ ] fix gameover state detected prematurely, causing crash
-* [ ] fix score not incrementing on line clear
 * [ ] add play/pause functionality
 * [ ] fix moving left/right choppy feel
-* [ ] figure out why check_and_clear being called on rows at very top of board - this preceeds premature gameover
-    * this crash seems to happen on another piece clear
+* [ ] figure out what's causing a bunch of out-of-bounds numbers to show up in row 1 of board - i think this is a type issue with uint & int types!
+    * [ ] this might be fixed with new type conversion functions? idk
+* [X] maybe fixed: figure out why check_and_clear being called on rows at very top of board
+    * this preceeds premature gameover, this crash seems to happen on another piece clear
+* [ ] fix gameover state triggered on getting a tetris (4 lines cleared at once)
 
 #### fixed
 * [X] fix J piece rotation
 * [X] Set up CI/CD with GH actions
 * [X] fix full lines not being removed
 * [X] fix crash on trying to clear line
+* [X] fix gameover state detected prematurely, causing crash [Issue #1](https://github.com/0xjmux/tetris/issues/1)
+* [X] fix score not incrementing on line clear
 
 
 > [!WARNING]

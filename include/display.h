@@ -13,9 +13,5 @@
 
 void nc_init_colors(WINDOW *w);
 
-void save_game_state(TetrisGame *tg, const char* filename);
-
-// void old_save_board_to_file(FILE *file, TetrisBoard tb);
-void ini_save_board_to_file(FILE *file, TetrisBoard tb);
 
 #endif

@@ -51,11 +51,11 @@ enum player_move {T_NONE, T_UP, T_DOWN, T_LEFT, T_RIGHT, T_PLAYPAUSE, T_QUIT};
 
 // Points per level cleared, combos not implemented
 // See: https://tetris.wiki/Scoring
-static const uint16_t points_per_level_cleared[] = {0, 100, 300, 500, 800};
+static const uint16_t points_per_level_cleared[5] = {0, 100, 300, 500, 800};
 
 /**
  * row,col location on tetris board, from top right. 
- * Negative numbers allowed.
+ * Negative numbers allowed so this can be used for offsets
 */
 typedef struct tetris_location {
     int16_t row;
@@ -116,6 +116,7 @@ typedef struct TetrisGame {
     uint32_t score;
     uint32_t level;
     uint32_t gravity_tick_rate_usec;
+    uint8_t lines_cleared_since_last_level;
 
     // uint32_t last_gravity_tick_usec;
     // this requires <sys/time.h>
