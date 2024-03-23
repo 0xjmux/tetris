@@ -84,7 +84,7 @@ int main(void) {
         tg_tick(tg, move);
 
         // display board
-        display_board(g_win, &tg->active_board);
+        display_board(g_win, tg->active_board);
         update_score(s_win, tg);
 
         switch(getch()) {
@@ -161,7 +161,7 @@ int main(void) {
 /**
  * Draw board array presented by tetris game
 */
-void display_board(WINDOW *w, TetrisBoard *tb) {
+void display_board(WINDOW *w, TetrisBoard tb) {
 
     static struct timeval last_update;
 
@@ -179,8 +179,8 @@ void display_board(WINDOW *w, TetrisBoard *tb) {
             wmove(w, 1 + i, 1);
             for (int j = 0; j < TETRIS_COLS; j++) {
 
-                if (tb->board[i][j] >= 0) {
-                    ADD_BLOCK(w, tb->board[i][j]);
+                if (tb.board[i][j] >= 0) {
+                    ADD_BLOCK(w, tb.board[i][j]);
                 }
                 else {
                     ADD_EMPTY(w);
@@ -191,10 +191,11 @@ void display_board(WINDOW *w, TetrisBoard *tb) {
 
         last_update = curr_time_usec;
         wrefresh(w);
+
         #ifdef DEBUG_T
         // fprintf(gamelog, "display_board()\n");
         // print_board_state(*tb, gamelog);
-        fflush(gamelog);
+        // fflush(gamelog);
         #endif
 
         #ifdef DEBUG_T_WIN

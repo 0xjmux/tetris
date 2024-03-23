@@ -39,7 +39,7 @@
                        waddch((w),' '|A_REVERSE|COLOR_PAIR(x))
 #define ADD_EMPTY(w) waddch((w), ' '); waddch((w), ' ')
 
-void display_board(WINDOW *w, TetrisBoard *b);
+void display_board(WINDOW *w, TetrisBoard b);
 void update_score(WINDOW *w, TetrisGame *tg);
 
 // Debug functions
