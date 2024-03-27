@@ -59,12 +59,12 @@ TetrisGame* create_game(void) {
 
 
     #ifdef DEBUG_T
-
         #ifndef TETRIS_UNIT_TEST_DEF
         // separate gamelog file to prevent ncurses printing issues
         gamelog = fopen("game.log", "w+");
         #else
-        // for unit testing, assign game.log to stdout
+        // for unit testing, assign gamelog to stdout so the output shows up 
+        //  in the GH actions console
         gamelog = stdout;
         #endif
     #endif
@@ -105,7 +105,9 @@ bool tg_tick(TetrisGame *tg, enum player_move move) {
     check_and_spawn_new_piece(tg);      // includes row clearing and score updates
     render_active_board(tg);
     if (check_game_over(tg)) {        // not fully implemented yet
-        fprintf(gamelog, "game over detected, returning false from tg_tick\n");
+        #ifdef DEBUG_T
+            fprintf(gamelog, "game over detected, returning false from tg_tick\n");
+        #endif
         return false;
     }
 

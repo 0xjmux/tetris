@@ -1,11 +1,11 @@
 /**
  * This file acts as a driver for the tetris game so it can be run on 
  * an x86 machine to test functionality before porting to RTOS
- * @file      
- * @brief     
- * @version   
- * @author    
- * @date      
+ * @file driver_tetris.c
+ * @brief Driver for tetris game so it can be run on Linux workstations for testing
+ * @version 1.0
+ * @author Jacob Bokor
+ * @date 03/2024
  *
  */
 
@@ -63,7 +63,6 @@ int main(void) {
     
 
     tg = create_game();
-    // tg->board = create_board();
     enum player_move move = T_NONE;
     create_rand_piece(tg);      // create first piece
 
@@ -114,15 +113,36 @@ int main(void) {
 
                 break;
 
+            // Quit game
             case 'q':
-                move = T_QUIT;
+                wclear(g_win);
+                box(g_win,0,0);
+                wmove(g_win, (TETRIS_ROWS / 10), (TETRIS_COLS * BLOCK_WIDTH / 2) -4);
+                wprintw(g_win, "QUIT? [Yy/Nn]");
+                wrefresh(g_win);
+                // change getch() back to blocking so pause holds until resumed
+                timeout(-1);
+                char response = getch();
+
+                if (response == 'y' || response == 'Y' || \
+                    response == ' ' || response == 'q') {
+                    move = T_QUIT;
+                    break;
+                }
+                else {
+                    move = T_NONE;
+                }
+
+                timeout(0);
                 break;
             // save game to disk
             case 'p':
                 move = T_NONE;
                 save_game_state(tg, "gamestate.ini");
                 mvwprintw(s_win, 4,1, "GAME STATE SAVED\n");
+                #ifdef DEBUG_T
                 fprintf(gamelog, "game state saved to file gamestate.ini\n");
+                #endif
                 wnoutrefresh(s_win);
                  
                 break;
@@ -145,9 +165,6 @@ int main(void) {
     // for debugging, save state when game exits
     save_game_state(tg, "final-gamestate.ini");
     #endif
-
-
-    // TODO ask player if they want to play again
 
 
     // if we're here, game is over; dealloc tg
@@ -225,14 +242,16 @@ void update_score(WINDOW *w, TetrisGame *tg) {
 
 /** 
  * Debug function to print out player move
+ * Only works when DEBUG_T def enabled
 */
 void print_keypress(enum player_move move) {
     // translate enum value into human-readable move
-    char const* move_str[] =  {"T_NONE", "T_UP", "T_DOWN", "T_LEFT", \
-    "T_RIGHT", "T_PLAYPAUSE", "T_QUIT"};
-    fprintf(gamelog, "Received move: %s\n", move_str[move]);
-    fflush(gamelog);
-
+    #ifdef DEBUG_T
+        char const* move_str[] =  {"T_NONE", "T_UP", "T_DOWN", "T_LEFT", \
+        "T_RIGHT", "T_PLAYPAUSE", "T_QUIT"};
+        fprintf(gamelog, "Received move: %s\n", move_str[move]);
+        fflush(gamelog);
+    #endif
 }
 
 

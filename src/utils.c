@@ -20,16 +20,19 @@ const char* get_piece_str(enum piece_type ptype) {
  * Simple function to create a new piece with the specified parameters
 */
 TetrisPiece create_tetris_piece(enum piece_type ptype, \
-    int16_t row, int16_t col, uint8_t orientation) {
+    int16_t row, int16_t col, uint8_t orientation) 
+{
     assert(orientation >= 0 && orientation < 4 && "Orientation out of range");
+
     TetrisPiece new_piece = {.ptype = ptype, .orientation = orientation, \
         .loc.col = col, .loc.row = row , .falling=true};
+
     return new_piece;
 }
 
 
 
-// macros for inih parsing
+// macros for ini parsing
 #define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 #define MATCH_SECTION(n) strcmp(section, n) == 0
 #define MATCH_KEY(n) strcmp(name, n) == 0
@@ -43,7 +46,6 @@ static int handler(void* user, const char* section, const char* name,
     TetrisGame *tg = (TetrisGame*)user;
 
     // this is ugly but ig you cant do it with switch/case so here we go
-    //MATCH("SECTION", "KEY")
     if (MATCH_SECTION("TETRIS_GAME_STRUCT")) {
 
         if (MATCH_KEY("game_over")) {
@@ -94,8 +96,6 @@ static int handler(void* user, const char* section, const char* name,
 
     // read board from file
     else if (MATCH_SECTION("active_board")) {
-
-        // not the most efficient way of going about this, but it's cleaner at least
         reconstruct_board_from_str_row(&tg->active_board, name, value);
 
     }
@@ -151,7 +151,7 @@ void reconstruct_board_from_str_row(TetrisBoard *tb, const char *name, const cha
         strcpy(str_row, value);
         
 
-        // this is not a great way to do this but it'll only ever run on 
+        // there are better ways of doing this but it'll only ever run on 
         //  "normal" computers and should be good enough
         for (int i = 0; i < TETRIS_ROWS; i++) {
             snprintf(curr_row, MAX_ROW_NAME_LEN, "row_%d", i);
@@ -166,7 +166,6 @@ void reconstruct_board_from_str_row(TetrisBoard *tb, const char *name, const cha
                     tb->board[i][j] = atoi(curr_cell);
                 }
 
-                // printf("copied row %d: %s\n", i, value);
             }
         }
 
@@ -246,12 +245,21 @@ void ini_save_board_to_file(FILE *file, TetrisBoard tb) {
 /**
  * Print current board state to console
  * @param TetrisBoard
- * @param *file to print to - NULL for default
+ * @param *file to print to - NULL for default (gamelog)
  * @param ini_out - if printing to an .ini file, prepend each line with comment char ";"
 */
 void print_board_state(TetrisBoard tb, FILE *file, bool ini_out) {
-    if (file == NULL) 
-        file = gamelog;
+    if (file == NULL) {
+        #ifdef DEBUG_T
+            file = gamelog;
+        #else  
+            // if this is a debug statement but debug is disabled, exit now
+            file = NULL;
+            return;
+        #endif
+    }
+
+
     // draw existing pieces on board
     if (ini_out) fprintf(file, "; ");
     fprintf(file, "Highest occupied cell: %d\n", tb.highest_occupied_cell);

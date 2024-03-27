@@ -2,16 +2,11 @@
 
 This game engine is part of a larger project where I'm implementing a version of Tetris playable on WS2812B LED matrices via an ESP-Now remote. 
 
-The game was branched off to it's own repository because the embedded project source tree only needs `tetris.h` and `tetris.c`, but all the other driver and testing files take up a decent amount of space - so while i'm developing it, it'll live here. 
-
-> [!WARNING]
-> This project is still in active development, bugs are still being found. When this is no longer the case, this notice will be removed. 
+The game was branched off to its own repository because the embedded project source tree only needs `tetris.h` and `tetris.c`, but all the other driver and testing files take up a lot of space.
 
 ### TODO:
 * [ ] fix duplicate colors
-    * this is an ncurses color issue, the game is rendering it fine. 
-* [ ] fix moving left/right choppy feel
-* [ ] add confirmation on quit
+    * this is an ncurses color issue with TERM, the game logic is setting it correctly
 * [ ] maybe rewrite render_active_board to no-copy to increase speed?
 
 #### fixed
@@ -27,6 +22,7 @@ The game was branched off to it's own repository because the embedded project so
 * [X] add play/pause functionality
 * [X] Finish tetris game logic
 * [X] fix gameover state not detected
+* [X] add confirmation on quit to driver
 
 
 
@@ -56,18 +52,47 @@ mostly for myself to not forget
 ### Compilation
 #### Game Driver (runs in terminal on Linux workstations)
 ```sh
-cmake . -B build && cmake --build build'
+cmake . -B build && cmake --build build
 ./build/tetris_driver
 ```
 
 #### Unit Tests
 ```sh
-cmake . -B build -DTARGET_GROUP=test && cmake --build build'
+cmake . -B build -DTARGET_GROUP=test && cmake --build build
 ./build/test_tetris
 ```
 
-#### Linux Game Controls
-* For your own microcontroller implementation, see `src/driver_tetris.c` as an example; it shows you everything that's needed for a function implementation. The game is designed to be as self-contained as possible, so past passing along inputs and rendering the board array there's not much you need to do. 
+#### Debugging 
+If debugging flags are enabled, two game state files will show up in the current directory when the game is finished: `game.log` and `final-gamestate.ini`. The `game.log` is a log of actions taken during the game to speed up tracing logic problems; `final-gamestate.ini` contains a human & machine readable save of the entire game state at gameover, allowing easier debugging of premature exit conditions (which was one of the bigger bugs I had to find). The log file automatically updates during gameplay, so a live log of what's happening in-game can be watched in a separate terminal session by doing `tail -f game.log`. 
+
+One of the main reasons I set up the `.ini` file saving functionality was for unit testing. This can be seen in the `test_clearRowsDumpedGame()` functions inside `test/suite_1.c`. The game state is restored and then used to test edge cases and look for weird behavior, all starting from an actual state reached in-game. 
+
+
+#### Implementation and Controls
+* For your own microcontroller implementation, see `src/driver_tetris.c` as an example; it shows you everything that's needed for a complete implementation. The game is designed to be as self-contained as possible, so past passing along inputs and rendering the board array there's not much you need to do. 
+
+Essentially, this is it:
+```c
+// start game, define player_move variable, and create first piece
+TetrisGame *tg = create_game();
+enum player_move move = T_NONE;
+create_rand_piece(tg);     
+
+while([game not over]) {
+    // do game tick
+    tg_tick(tg, move);
+
+    // process player input
+    // wait for 10 ms before doing it again
+}
+```
+
+The game board itself is rendered to a 2D array `int8_t board[TETRIS_ROWS][TETRIS_COLS]` accessible via `tg->active_board.board`. All your display implementation needs to do is render this array into the associated colors for whatever display format is desired. 
+
+The code is documented using Doxygen style comments. Custom types are documented in `tetris.h`, and functions are preceded by short explanations in `tetris.c`. On inclusion into your project, your IDE's LSP server should automatically show these descriptions on hover. 
+
+##### Linux Game Controls
+These are the controls for my implementation (`driver_tetris.c`) for POSIX terminals via ncurses. 
 ```
 Use arrow keys to move
 SPACE pauses game
@@ -77,11 +102,11 @@ SPACE pauses game
 
 
 #### Flags
-* There are many compilation flags to enable/disable features, usually for debugging purposes. I've also created several compilation flags that enable extra output on CI builds so it's easier to see what went wrong from the build report console. The default options should be fine, but for finer tuning you can see the options available to you across the project's `CMakeLists.txt` files. 
+* There are many compilation flags to enable/disable features, mostly for debugging. I've also created several compilation flags that enable extra output on CI builds so it's easier to see what went wrong from the build report console. The default options should be fine, but for finer tuning you can see the options available to you across the project's `CMakeLists.txt` files. 
 
 
 ##### Other
-I have these in my `~/.zshrc` to make the testing process more fluid. 
+I have these aliases in my `~/.zshrc` to make the testing process more fluid. 
 ```sh
 alias cmakeclean='rm -rf CMakeCache.txt cmake_install.cmake Makefile CMakeFiles build'
 alias cmakeregen='cmake . -B build && cmake --build build'

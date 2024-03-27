@@ -31,6 +31,7 @@ jobs:
       run: cmake -B ${{github.workspace}}/build -DTARGET_GROUP=test
         -DTETRIS_UNIT_TEST_CI=ON
         -DTETRIS_PRINT_BOARD_IN_TESTS_MACRO=ON
+        -DTETRIS_DEBUG_T_MACRO=ON
       # run: cmake -B ${{github.workspace}}/build -DTARGET_GROUP=test -DTETRIS_UNIT_TEST_MACRO=ON
       # build cmake in build dir with CI unit test flag turned on - disable macro bc causes some tests to not run
 

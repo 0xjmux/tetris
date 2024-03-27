@@ -22,8 +22,8 @@
 
 // TETRIS GAME LOGIC DEBUG FLAG
 // all print/fprintf statements in tetris.c are gated by this flag. extremely helpful
-//  for debugging, but will need to be disabled on MCU platforms
-#define DEBUG_T 1
+//  for debugging game logic, but should not be present in release builds 
+// #define DEBUG_T 1
 
 #ifdef DEBUG_T
 // separate game log file to prevent ncurses printing issues
