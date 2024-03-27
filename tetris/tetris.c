@@ -524,7 +524,7 @@ uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells) {
         // if row is full, add it to list of rows to clear
         if(check_filled_row(tg, row_with_offset)) {
             // but first, check to make sure we haven't already added it to the list
-            if (!val_in_arr(row_with_offset, rows_to_clear, rows_idx + 1)) {
+            if (!val_in_arr(row_with_offset, rows_to_clear, rows_idx)) {
                 rows_to_clear[rows_idx] = row_with_offset;
                 rows_idx += 1;
             }

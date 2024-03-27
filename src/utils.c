@@ -64,6 +64,7 @@ static int handler(void* user, const char* section, const char* name,
 
             tg->last_gravity_tick_usec.tv_sec = atoi(strtok(timeval_str,","));
             tg->last_gravity_tick_usec.tv_usec = atoi(strtok(NULL, ","));
+            free(timeval_str);
 
         } else if (MATCH_KEY("active_board_highest_occupied_cell")) {
             tg->active_board.highest_occupied_cell = atoi(value);
