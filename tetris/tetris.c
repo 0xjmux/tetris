@@ -88,23 +88,20 @@ void end_game(TetrisGame *tg) {
 }
 
 /**
- * Process a single Tetris game tick
- * This function is the only one you need to call to use the tetris game - everything
+ * Process a single Tetris game tick.
+ * @brief This function is the only one you need to call to use the tetris game - everything
  *  is processed internally. Pass player moves into this function, and then just 
  *  render the tg->active_board array to your desired display format. 
- * @param TetrisGame *tg
- * @param player_move move
+ * @param TetrisGame* tg - pointer to TetrisGame struct
+ * @param player_move most recent player move as enum
  * @returns true if game is still going, false when game_over
 */
 bool tg_tick(TetrisGame *tg, enum player_move move) {
 
-    // handle gravity, input, cleared lines, adjusting score, checking game over
-
-
     check_do_piece_gravity(tg);
     check_and_spawn_new_piece(tg);      // includes row clearing and score updates
     render_active_board(tg);
-    if (check_game_over(tg)) {        // not fully implemented yet
+    if (check_game_over(tg)) {        // check for game over condition
         #ifdef DEBUG_T
             fprintf(gamelog, "game over detected, returning false from tg_tick\n");
         #endif
@@ -117,7 +114,6 @@ bool tg_tick(TetrisGame *tg, enum player_move move) {
 
         case T_UP:
             if(test_piece_rotate(&tg->board, tg->active_piece))
-                // fprintf(gamelog, "piece rotated (not impl yet)\n");
                 tg->active_piece.orientation = (tg->active_piece.orientation + 1) % 4;
             break;
 
@@ -156,9 +152,10 @@ bool tg_tick(TetrisGame *tg, enum player_move move) {
 
 
 /**
- * combine active_piece and existing board stack into active_board, 
+ * Combine active_piece and existing board stack into active_board, 
  * which is then used by display system to display the actual game.
- * This function assumes placement of *tp in board is valid
+ * 
+ * @note This function assumes placement of *tp in board is valid
  * @returns active_board, but also updates ptr tg->active_board
 */
 TetrisBoard render_active_board(TetrisGame *tg) {
@@ -200,8 +197,8 @@ TetrisBoard render_active_board(TetrisGame *tg) {
 }
 
 /** 
- * Updates game score based on # lines cleared, along with
- * level and gravity tick rate
+ * Updates game score based on # lines cleared, including
+ * level and gravity tick rate.
  * Every 10 lines cleared, level increases by 1
 */
 void tg_update_score(TetrisGame *tg, uint8_t lines_cleared) {
@@ -222,7 +219,6 @@ void tg_update_score(TetrisGame *tg, uint8_t lines_cleared) {
 
         // when the level increases, the gravity tick speeds up if it's still above the floor
         if (tg->gravity_tick_rate_usec > GRAVITY_TICK_RATE_FLOOR) {
-            // i haven't tested this lower bound but i assume it'll be very difficult
             tg->gravity_tick_rate_usec -= GRAVITY_TICK_RATE_DELTA;
         }
         assert(tg->gravity_tick_rate_usec > GRAVITY_TICK_RATE_FLOOR && \
@@ -250,7 +246,6 @@ void tg_update_score(TetrisGame *tg, uint8_t lines_cleared) {
 TetrisPiece create_rand_piece(TetrisGame *tg) {
     // create new piece and place in middle center
     TetrisPiece new_piece;
-
 
     new_piece.ptype = rand() % NUM_TETROMINOS;
     new_piece.orientation = 0;
@@ -388,7 +383,7 @@ bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp) {
             return false;
     }
 
-    // since we would've returned false if we failed earlier, just ret true now
+    // if we're here, rotation is valid
     return true;
 }
 
@@ -404,8 +399,6 @@ bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp) {
  * that this function will need to be modified when porting to other platforms
 */
 bool check_do_piece_gravity(TetrisGame *tg) {
-    // if time has passed tick interval
-
     // get curr system time
     struct timeval curr_time_usec;
     gettimeofday(&curr_time_usec, NULL);
@@ -442,9 +435,8 @@ bool check_do_piece_gravity(TetrisGame *tg) {
 
 
 /**
- * On placing a piece down, the rows where it landed 
- * need to be checked to see if they're full so they can
- * be cleared and the score can be increased
+ * Check if `row` is completely filled. 
+ * @returns true if yes, false if no
 */
 bool check_filled_row(TetrisGame *tg, const uint8_t row) {
     
@@ -476,14 +468,12 @@ void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows) {
         for (int row = top_row + num_rows - 1; row - num_rows > 0; row--) {
             // get next row and move it down
             tg->board.board[row][col] = tg->board.board[row-num_rows][col];
-            // fprintf(stdout, "Clearing row %d normally\n", row);
         }
         // clear rows at the very top of the board, where we want to avoid 
         //  reading garbage from invalid board locations
         for (int row = num_rows; row > 0; row--) {
             assert(row < TETRIS_ROWS);
             tg->board.board[row][col] = BG_COLOR;
-            // fprintf(stdout, "Clearing row=%d at top of board\n", row);
         }
     }
 
@@ -505,15 +495,14 @@ uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells) {
      * not doing dupliate work was complex enough that this is prob better.
      * 
      * in short, this only checks rows where piece ended up, but will 
-     * check all 4 rows; which might mean checking the same row twice
+     * check the row of every cell in the piece;
+     * which might mean checking the same row twice
     */ 
     uint8_t rows_to_clear[4];
     uint8_t rows_idx = 0;       // index (and size) of rows_to_clear
     uint8_t row_with_offset;
     uint8_t piece_max_row = TETRIS_ROWS;
     for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
-        // I THINK SOMETHING IS WRONG SOMEWHERE HERE
-
         row_with_offset = (uint8_t) tp_cells[i].row;
 
         assert(row_with_offset < TETRIS_ROWS && row_with_offset >= 0 && "global row out of bounds");
@@ -551,10 +540,11 @@ uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells) {
     // if we have rows to clear:
     if (rows_idx > 0) {
         // convert rows_to_clear to int16 to prevent issues
-        int16_t rows_to_clear_int16[4];
-        uint8_to_int16_arr(rows_to_clear, rows_to_clear_int16, rows_idx );
+        // int16_t rows_to_clear_int16[4];
+        // uint8_to_int16_arr(rows_to_clear, rows_to_clear_int16, rows_idx );
         // find top row in rows_to_clear and clear rows
-        uint8_t top_row = (uint8_t) smallest_in_arr(rows_to_clear_int16, rows_idx);
+        uint8_t top_row = smallest_in_arr(rows_to_clear, rows_idx);
+        // uint8_t top_row = (uint8_t) smallest_in_arr(rows_to_clear_int16, rows_idx);
         #ifdef DEBUG_T
             fprintf(gamelog, "clearing %d rows with top_row=%d\n", rows_idx, top_row);
             fflush(gamelog);
@@ -652,10 +642,10 @@ inline bool val_in_arr(const uint8_t val, uint8_t arr[], const uint8_t arr_len) 
 
 /**
  * Simple helper function to return smallest value in array
- * (int16_t only, used for row clearing operation)
+ * (int8_t only, used for row clearing operation)
 */
-int16_t smallest_in_arr(int16_t arr[], uint8_t arr_size) {
-    int smallestVal = INT16_MAX;    
+uint8_t smallest_in_arr(uint8_t arr[], uint8_t arr_size) {
+    int smallestVal = UINT8_MAX;    
     for (int i = 0; i < arr_size; i++) {
         if (arr[i] < smallestVal) {
             smallestVal = arr[i];
@@ -678,8 +668,6 @@ int16_t smallest_in_arr(int16_t arr[], uint8_t arr_size) {
  * Get difference between before and after in microseconds, accounting for 
  * the fact the seconds place rolls over
  * 
- * @note timeval seems like the most portable way to get time, 
- * so it looks like i'm going with that 
 */
 inline int32_t get_elapsed_us(struct timeval before, struct timeval after) {
     int32_t elapsed_us;
@@ -691,29 +679,6 @@ inline int32_t get_elapsed_us(struct timeval before, struct timeval after) {
         elapsed_us = 100000 + after.tv_usec - before.tv_usec;
     }
     return elapsed_us;
-}
-
-/**
- * convert input array of int16_t to uint8_t 
-*/
-void int16_to_uint8_arr(int16_t *in_arr, uint8_t *out_arr, uint8_t arr_size) {
-    for (int i = 0; i < arr_size; i++) {
-        // out_arr[i] = (uint8_t) ((in_arr[i]) >> 8);
-        assert(in_arr[i] < 256 && in_arr[i] > -1 && "Can't cast OOB int16 to uint8!");
-        out_arr[i] = (uint8_t) (in_arr[i]);
-    }
-}
-
-/**
- * convert input array of uint8_t to int16_t 
-*/
-void uint8_to_int16_arr(uint8_t *in_arr, int16_t *out_arr, uint8_t arr_size) {
-    for (int i = 0; i < arr_size; i++) {
-        // out_arr[i] = (uint8_t) ((in_arr[i]) >> 8);
-        out_arr[i] = (int16_t) (in_arr[i]);
-
-        assert(out_arr[i] < 256 && out_arr[i] > -1 && "Converstion to int16 from uint8 OOB!");
-    }
 }
 
 /**

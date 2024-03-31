@@ -31,7 +31,8 @@ extern FILE *gamelog;
 #endif
 
 // how many rows and columns is the board?
-// max allowed is 256,256 because anything larger is unreasonable
+// max allowed is 128,128 since I want all locations to 
+//  fit in a single byte
 #define TETRIS_ROWS 32
 #define TETRIS_COLS 16
 
@@ -48,6 +49,11 @@ extern FILE *gamelog;
 // gravity_tick minimum where we won't decrease it any further past this point
 #define GRAVITY_TICK_RATE_FLOOR 20000
 
+// Points per line cleared, combos not implemented
+// See: https://tetris.wiki/Scoring
+static const uint16_t points_per_line_cleared[5] = {0, 100, 300, 500, 800};
+
+
 // piece descriptions
 // S, Z, T, L, reverse L (J), square, long bar (I)
 enum piece_type {S_PIECE, Z_PIECE, T_PIECE, L_PIECE, J_PIECE, SQ_PIECE, I_PIECE};
@@ -58,17 +64,14 @@ enum piece_colors {S_CELL_COLOR, Z_CELL_COLOR, T_CELL_COLOR, L_CELL_COLOR, J_CEL
 // Define possible moves that can be taken by player
 enum player_move {T_NONE, T_UP, T_DOWN, T_LEFT, T_RIGHT, T_PLAYPAUSE, T_QUIT};
 
-// Points per line cleared, combos not implemented
-// See: https://tetris.wiki/Scoring
-static const uint16_t points_per_line_cleared[5] = {0, 100, 300, 500, 800};
 
 /**
  * row,col location on tetris board, from top right. 
  * Negative numbers allowed so this can be used for offsets
 */
 typedef struct tetris_location {
-    int16_t row;
-    int16_t col;
+    int8_t row;
+    int8_t col;
 } tetris_location;
 
 // tetris piece descriptions - defined here to prevent multiple definition
@@ -77,8 +80,9 @@ extern const tetris_location TETROMINOS[NUM_TETROMINOS][NUM_ORIENTATIONS][NUM_CE
 /**
  * Struct representing a single Tetromino
  * @param ptype - enum type of piece
- * @param tetris_location loc - piece position
- * @param orientation - piece orientation
+ * @param tetris_location loc - piece position [row,col]
+ * @param orientation - piece orientation [0-3]
+ * @param falling - bool, true if currently falling
 */
 typedef struct TetrisPiece {
     enum piece_type ptype;
@@ -89,11 +93,10 @@ typedef struct TetrisPiece {
 
 /**
  * Represents the game board
- * @param board 2D int array representing board
+ * @param board 2D int8_t array representing board
  *  -1 means unoccupied, >0 indicates cell color by piece_colors[]
- * @param highest_occupied_row tallest point in current stack, tracked to 
- *  avoid needless recomputation
- * 
+ * @param highest_occupied_row uint8_t tallest point in current stack, tracked to 
+ *  avoid needless recomputation and help indicate gameover condition
 */
 typedef struct TetrisBoard {
     int8_t board[TETRIS_ROWS][TETRIS_COLS];
@@ -107,10 +110,11 @@ typedef struct TetrisBoard {
  * @param active_board 2D struct array representing entire board 
  *  (including falling piece)
  * @param game_over bool true if game over, false if not
- * @param gravity_tick_rate usec between each gravity tick
- * @param score player's current score
- * @param level current level
- * @param last_gravity_tick_usec last time active_piece was moved down
+ * @param gravity_tick_rate uint32_t usec between each gravity tick
+ * @param score uint32_t player's current score
+ * @param level uint32_t current level
+ * @param lines_cleared_since_last_level - uint8_t 
+ * @param last_gravity_tick_usec - `struct timeval` last time active_piece was moved down
 */
 typedef struct TetrisGame {
     TetrisBoard board;
@@ -132,11 +136,13 @@ typedef struct TetrisGame {
 ////////////////////////////////////////
 
 // init/end functions
+
 TetrisGame* create_game(void);
 void end_game(TetrisGame *tg);
 TetrisBoard init_board(void);
 
-// THIS IS THE MAIN FUNCTION for using the library; all game state is handled internally
+// This is the main function for using this library; all game state is handled internally
+
 bool tg_tick(TetrisGame *tg, enum player_move move);
 
 
@@ -146,6 +152,7 @@ bool check_and_spawn_new_piece(TetrisGame *tg);
 TetrisPiece create_rand_piece(TetrisGame *tg);
 
 // check game state conditions
+
 bool check_valid_move(TetrisGame *tg, uint8_t player_move);
 bool test_piece_offset(TetrisBoard *tb, const tetris_location global_loc, const tetris_location move_offset);
 bool test_piece_rotate(TetrisBoard *tb, const TetrisPiece tp);
@@ -158,9 +165,10 @@ void clear_rows(TetrisGame *tg, uint8_t top_row, uint8_t num_rows);
 bool check_game_over(TetrisGame *tg);
 
 // helper functions
+
 bool val_in_arr(const uint8_t val, uint8_t arr[], const uint8_t arr_len);
 int32_t get_elapsed_us(struct timeval before, struct timeval after);
-int16_t smallest_in_arr(int16_t arr[], const uint8_t arr_size);
+uint8_t smallest_in_arr(uint8_t arr[], const uint8_t arr_size);
 void int16_to_uint8_arr(int16_t *in_arr, uint8_t *out_arr, uint8_t arr_size);
 void uint8_to_int16_arr(uint8_t *in_arr, int16_t *out_arr, uint8_t arr_size);
 

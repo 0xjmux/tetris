@@ -31,8 +31,6 @@ IF(TETRIS_UNIT_TEST_MACRO)
 ENDIF(TETRIS_UNIT_TEST_MACRO)
 ##### END OPTIONAL BUILD FLAGS ######
 
-
-
 target_link_libraries(test_tetris
     tetris
     Unity

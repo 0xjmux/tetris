@@ -415,42 +415,34 @@ void test_getElapsedUs(void) {
 */
 void test_arr_helpers(void) {
     // test int16_to_uint8_arr()
-    int16_t arr1[5] = {5,2,1,4,3};
-    uint8_t out_arr1[5];
-    uint8_t exp_arr1[5] = {5,2,1,4,3};
-    int16_to_uint8_arr(arr1, out_arr1, 5);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY_MESSAGE(exp_arr1, \
-       out_arr1, 5, "Array conversion to uint8 incorrect");
+    uint8_t arr1[5] = {5,2,1,4,3};
 
-    TEST_ASSERT_EQUAL_UINT8_MESSAGE(1, (uint8_t)smallest_in_arr(arr1, 5), \
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(1, smallest_in_arr(arr1, 5), \
         "smallest_in_arr failed on all positive values");
 
-    int16_t arr2[6] = {INT8_MAX,1,2,255,4,0};
-    uint8_t out_arr2[6];
-    uint8_t exp_arr2[6] = {INT8_MAX,1,2,255,4,0};
-    int16_to_uint8_arr(arr2, out_arr2, 6);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY_MESSAGE(exp_arr2, \
-       out_arr2, 6, "arr2 conversion to uint8 incorrect");
+    uint8_t arr2[6] = {UINT8_MAX,1,2,255,4,0};
 
-    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, (uint8_t)smallest_in_arr(arr2, 6), \
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(0, smallest_in_arr(arr2, 6), \
         "smallest_in_arr failed on all positive values");
 
     // test smallest in arr
-    int16_t arr4[5] = {5,2,1,4,3};
-    TEST_ASSERT_EQUAL_INT16(1, smallest_in_arr(arr4, 5));
+    uint8_t arr4[5] = {5,2,1,4,3};
+    TEST_ASSERT_EQUAL_UINT8(1, smallest_in_arr(arr4, 5));
 
-    int16_t arr6[6] = {INT16_MAX,-1,2,-2,4,5};
-    TEST_ASSERT_EQUAL_INT16(-2, smallest_in_arr(arr6, 6));
+    uint8_t arr6[6] = {UINT8_MAX,1,2,3,4,5};
+    TEST_ASSERT_EQUAL_UINT8(1, smallest_in_arr(arr6, 6));
 
 
     #define ARR7_SIZE 6
     uint8_t arr7_uint[ARR7_SIZE] = {2,UINT8_MAX,2,255,0,5};
-    int16_t arr7_int16[ARR7_SIZE];
-    int16_t arr7_exp[ARR7_SIZE] = {2,UINT8_MAX,2,255,0,5}; 
-    uint8_to_int16_arr(arr7_uint, arr7_int16, ARR7_SIZE);
-    TEST_ASSERT_EQUAL_INT16_ARRAY_MESSAGE(arr7_int16, \
-       arr7_exp, ARR7_SIZE, "arr7 conversion to int16 incorrect");
-    TEST_ASSERT_EQUAL_INT16(0, smallest_in_arr(arr7_int16, ARR7_SIZE));
+    /*
+        // int16_t arr7_int16[ARR7_SIZE];
+        // int16_t arr7_exp[ARR7_SIZE] = {2,UINT8_MAX,2,255,0,5}; 
+        // uint8_to_int16_arr(arr7_uint, arr7_int16, ARR7_SIZE);
+        // TEST_ASSERT_EQUAL_INT16_ARRAY_MESSAGE(arr7_int16, \
+        //    arr7_exp, ARR7_SIZE, "arr7 conversion to int16 incorrect");
+    */
+    TEST_ASSERT_EQUAL_UINT8(0, smallest_in_arr(arr7_uint, ARR7_SIZE));
 
 
     // test val_in_arr

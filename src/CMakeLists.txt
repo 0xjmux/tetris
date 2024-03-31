@@ -14,7 +14,7 @@ target_include_directories(tetris_driver PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 find_library(NCURSES_FOUND ncurses REQUIRED)
 
-OPTION(DEBUG_WINDOW "Enable window with game state information for debugging" ON)
+OPTION(DEBUG_WINDOW "Enable debug window with game state information in ncurses" OFF)
 IF(DEBUG_WINDOW)
     target_compile_definitions(tetris_driver PUBLIC DEBUG_T_WIN=1)
 ENDIF()
