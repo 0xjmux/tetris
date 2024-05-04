@@ -13,12 +13,11 @@
 #include <stdbool.h>
 #include <assert.h>
 
-#ifdef __linux__
 #include <stdio.h>
 #include <stdlib.h>         // used for malloc(), free()
 #include <string.h>         // memcpy
 #include <sys/time.h>       // timeval for microsecond time intervals
-#endif
+
 
 // TETRIS GAME LOGIC DEBUG FLAG
 // all print/fprintf statements in tetris.c are gated by this flag. extremely helpful
@@ -34,7 +33,7 @@ extern FILE *gamelog;
 // max allowed is 128,128 since I want all locations to 
 //  fit in a single byte
 #define TETRIS_ROWS 32
-#define TETRIS_COLS 16
+#define TETRIS_COLS 8
 
 
 // how many different piece types and orientations
@@ -68,6 +67,8 @@ enum player_move {T_NONE, T_UP, T_DOWN, T_LEFT, T_RIGHT, T_PLAYPAUSE, T_QUIT};
 /**
  * row,col location on tetris board, from top right. 
  * Negative numbers allowed so this can be used for offsets
+ * @param int8_t row
+ * @param int8_t col
 */
 typedef struct tetris_location {
     int8_t row;

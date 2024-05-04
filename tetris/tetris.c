@@ -505,7 +505,8 @@ uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells) {
     for(int i = 0; i < NUM_CELLS_IN_TETROMINO; i++) {
         row_with_offset = (uint8_t) tp_cells[i].row;
 
-        assert(row_with_offset < TETRIS_ROWS && row_with_offset >= 0 && "global row out of bounds");
+        // assert(row_with_offset < TETRIS_ROWS && row_with_offset >= 0 && "global row out of bounds");
+        assert(row_with_offset < TETRIS_ROWS && "global row out of bounds");
         #ifdef DEBUG_T
         fprintf(gamelog, "check_and_clear: checking row %d\n", row_with_offset);
         #endif
@@ -526,7 +527,7 @@ uint8_t check_and_clear_rows(TetrisGame *tg, tetris_location *tp_cells) {
     }
 
     // update highest occupied cell based on this piece
-    assert(piece_max_row >=0 && piece_max_row < TETRIS_ROWS && "new tallest cell out of bounds");
+    assert(piece_max_row < TETRIS_ROWS && "new tallest cell out of bounds");
 
     // if this piece contains the new tallest cell on the board, update highest_occupied_cell accordingly
     if (piece_max_row <  tg->board.highest_occupied_cell) {

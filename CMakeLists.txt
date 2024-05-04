@@ -1,5 +1,10 @@
-# ESP-IDF component line (untested)
-#idf_component_register(SRCS "tetris/tetris.c" INCLUDE_DIRS "tetris/tetris.h")
+# ESP-IDF component line
+#idf_component_register(SRCS "tetris/tetris.c"
+#                    INCLUDE_DIRS "tetris")
+#
+#return()
+#message(FATAL_ERROR "should not reach during idf build!!!")
+
 
 
 #cmake -DTARGET_GROUP=test {path-to-source-tree}
