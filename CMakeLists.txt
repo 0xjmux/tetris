@@ -1,4 +1,6 @@
-# ESP-IDF component line
+
+# If we're building in ESP-IDF, register tetris as a component. 
+#   Does not run if we're building normally, (eg for testing on x86). 
 if(ESP_PLATFORM)
   idf_component_register(SRCS "tetris/tetris.c"
                       INCLUDE_DIRS "tetris")
