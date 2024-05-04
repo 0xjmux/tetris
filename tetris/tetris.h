@@ -33,7 +33,8 @@ extern FILE *gamelog;
 // max allowed is 128,128 since I want all locations to 
 //  fit in a single byte
 #define TETRIS_ROWS 32
-#define TETRIS_COLS 8
+#define TETRIS_COLS 16
+//#define TETRIS_COLS 8
 
 
 // how many different piece types and orientations
