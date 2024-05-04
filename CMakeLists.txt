@@ -1,10 +1,9 @@
 # ESP-IDF component line
 if(ESP_PLATFORM)
-idf_component_register(SRCS "tetris/tetris.c"
-                    INCLUDE_DIRS "tetris")
-
-return()
-message(FATAL_ERROR "should not reach during idf build!!!")
+  idf_component_register(SRCS "tetris/tetris.c"
+                      INCLUDE_DIRS "tetris")
+  return()
+  message(FATAL_ERROR "should not reach during idf build!!!")
 endif()
 
 
