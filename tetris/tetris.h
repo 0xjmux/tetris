@@ -33,8 +33,12 @@ extern FILE *gamelog;
 // max allowed is 128,128 since I want all locations to 
 //  fit in a single byte
 #define TETRIS_ROWS 32
+
+#ifdef ESP_PLATFORM        // if compiling for ESP (32x8 matrix)
+#define TETRIS_COLS 8
+#else
 #define TETRIS_COLS 16
-//#define TETRIS_COLS 8
+#endif
 
 
 // how many different piece types and orientations

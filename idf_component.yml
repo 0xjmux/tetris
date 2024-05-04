@@ -1,0 +1,4 @@
+version: "1.0.0"
+description: "Tetris game implementation designed for use on embedded platforms"
+url: "https://github.com/0xjmux/tetris"
+license: "MIT"
