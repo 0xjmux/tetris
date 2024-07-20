@@ -1,8 +1,10 @@
 # Tetris Game Engine
 
-This game engine is part of a larger project ([ESP32-Neopixel-Tetris](https://github.com/0xjmux/esp32-neopixel-tetris)) where I'm implementing a version of Tetris playable on WS2812B LED matrices via an ESP-Now remote. 
+* [ESP Registry Page for 0xjmux/tetris](https://components.espressif.com/components/0xjmux/tetris)
 
-The game was branched off to its own repository because the embedded project source tree only needs `tetris.h` and `tetris.c`, but all the other driver and testing files take up a lot of space - plus having it as it's own component is fun.
+This game engine is part of a larger project ([ESP32-Neopixel-Tetris](https://github.com/0xjmux/esp32-neopixel-tetris)) where I'm implementing a version of Tetris playable on WS2812B LED matrices via an ESP-Now remote. It was written for embedded platforms while maximize modularity to enable native testing on workstation platforms.
+
+For an example of using this in an ESP-IDF project, see my [ESP32-Neopixel-Tetris](https://github.com/0xjmux/esp32-neopixel-tetris) repository.
 
 
 ### About
@@ -13,18 +15,6 @@ The game was branched off to its own repository because the embedded project sou
     * Game state is also saved to a file on gameover, which was done to debug issues that cause premature gameover conditions. 
     * Debug sub-window in game enableable via `-DDEBUG_WINDOW=ON` during cmake build. This shows current game state information, so weird behavior is easier to spot. 
 * Everything is written from scratch, with the exception of the graphics library (ncurses), Unit test harness (Unity), and `.ini` file parser, inih. 
-
-### Project Goals
-This project has several goals. 
-* Game needs to be runnable on low-powered devices using interrupts. Memory and compute requirements should be as minimal as possible. 
-* Driver code needed to make a given display or controller work should be kept as minimal as possible. Currently, the game exposes a 2D array of `int8_t` values representing different piece colors, and all the display implementation needs to do is render that to a grid of the board size. 
-* Teach myself embedded test-driven development and embedded unit testing using techniques from James Greening's "Test-Driven Development for Embedded C" ([link](https://pragprog.com/titles/jgade/test-driven-development-for-embedded-c/))
-* Set up CI from scratch for an embedded project
-* Learn CMake and set up the build system from scratch
-
-
-
-This game is my first attempt at writing a component of medium complexity, and one of my primary goals is bettering my understanding of development best practices to accelerate my work on future projects. 
 
 
 
@@ -108,6 +98,17 @@ alias cmakeregen='cmake . -B build && cmake --build build'
 alias cmaketest='cmake . -B build -DTARGET_GROUP=test && cmake --build build'
 ```
 
+### Project Goals
+This project has several goals. 
+* Game needs to be runnable on low-powered devices using interrupts. Memory and compute requirements should be as minimal as possible. 
+* Driver code needed to make a given display or controller work should be kept as minimal as possible. Currently, the game exposes a 2D array of `int8_t` values representing different piece colors, and all the display implementation needs to do is render that to a grid of the board size. 
+* Teach myself embedded test-driven development and embedded unit testing using techniques from James Greening's "Test-Driven Development for Embedded C" ([link](https://pragprog.com/titles/jgade/test-driven-development-for-embedded-c/))
+* Set up CI from scratch for an embedded project
+* Learn CMake and set up the build system from scratch
+
+
+This game is my first attempt at writing a component of medium complexity, and one of my primary goals is bettering my understanding of development best practices to accelerate my work on future projects. 
+
 
 ---
 
@@ -116,20 +117,6 @@ alias cmaketest='cmake . -B build -DTARGET_GROUP=test && cmake --build build'
     * this is an ncurses color issue with TERM, the game logic is setting it correctly
 * [ ] maybe rewrite render_active_board to no-copy to increase speed?
 
-#### fixed
-* [X] fix J piece rotation
-* [X] Set up CI/CD with GH actions
-* [X] fix full lines not being removed
-* [X] fix crash on trying to clear line
-* [X] fix gameover state detected prematurely, causing crash [Issue #1](https://github.com/0xjmux/tetris/issues/1)
-* [X] fix score not incrementing on line clear
-* [X] maybe fixed: figure out why check_and_clear being called on rows at very top of board
-    * this preceeds premature gameover, this crash seems to happen on another piece clear
-* [X] figure out what's causing a bunch of out-of-bounds numbers to show up in row 1 of board - i think this is a type issue with uint & int types!
-* [X] add play/pause functionality
-* [X] Finish tetris game logic
-* [X] fix gameover state not detected
-* [X] add confirmation on quit to driver
 
 
 #### Some of what I've learned
