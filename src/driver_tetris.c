@@ -36,11 +36,10 @@ int main(void) {
     nodelay(stdscr, TRUE);
     // getmaxyx(stdscr, row, col);      // get window size to int row, int col
     
-    // refresh();
+    refresh();
 
     const int winheight = TETRIS_ROWS;
     const int winwidth = BLOCK_WIDTH * TETRIS_COLS;
-    // ncurses window def: WINDOW *newwin(int nlines, int ncols, int begin_y, int begin_x);
     g_win = newwin(winheight + 2, winwidth + 2, 2, 2);        // creates game window
 
     nc_init_colors();
@@ -181,13 +180,13 @@ int main(void) {
 void display_board(WINDOW *w, TetrisBoard tb) {
 
     static struct timeval last_update;
-
     struct timeval curr_time_usec;
     gettimeofday(&curr_time_usec, NULL);
+
     int32_t usec_timediff = curr_time_usec.tv_usec - last_update.tv_usec; 
+
     // if it flows below zero, (seconds ticks over, but us doesn't) just run it
     if (usec_timediff > SCREEN_REFRESH_INTERVAL_USEC || usec_timediff < 0) {
-
         werase(w);
         box(w, 0,0);
         // draw existing pieces on board
@@ -208,6 +207,7 @@ void display_board(WINDOW *w, TetrisBoard tb) {
 
         last_update = curr_time_usec;
         wrefresh(w);
+        // wnoutrefresh(w);
 
         #ifdef DEBUG_T
         // fprintf(gamelog, "display_board()\n");
@@ -221,18 +221,17 @@ void display_board(WINDOW *w, TetrisBoard tb) {
 
         #endif
 
-        // wnoutrefresh(w);
     }
  }
 
 
 void update_score(WINDOW *w, TetrisGame *tg) {
     wclear(w);
-    box(w,0,0);
     wmove(w, 1, 1);
     mvwprintw(w, 1,1, "Score: %d\n", tg->score);
     mvwprintw(w, 2,1, "Level: %d\n", tg->level);
     mvwprintw(w, 3,1, "Lines until next Level: %d\n", 10 - tg->lines_cleared_since_last_level);
+    box(w,0,0);
 
     wnoutrefresh(w);
 
