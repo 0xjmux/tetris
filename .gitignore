@@ -44,3 +44,4 @@ suite_2.c
 # Output csv files for unit testing
 output*.csv
 
+dist

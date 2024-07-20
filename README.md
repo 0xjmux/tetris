@@ -1,8 +1,8 @@
 # Tetris Game Engine
 
-This game engine is part of a larger project where I'm implementing a version of Tetris playable on WS2812B LED matrices via an ESP-Now remote. 
+This game engine is part of a larger project ([ESP32-Neopixel-Tetris](https://github.com/0xjmux/esp32-neopixel-tetris)) where I'm implementing a version of Tetris playable on WS2812B LED matrices via an ESP-Now remote. 
 
-The game was branched off to its own repository because the embedded project source tree only needs `tetris.h` and `tetris.c`, but all the other driver and testing files take up a lot of space.
+The game was branched off to its own repository because the embedded project source tree only needs `tetris.h` and `tetris.c`, but all the other driver and testing files take up a lot of space - plus having it as it's own component is fun.
 
 
 ### About
